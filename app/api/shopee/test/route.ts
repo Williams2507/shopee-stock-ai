@@ -46,7 +46,7 @@ export async function GET() {
     const apiUrl =
     `https://openplatform.sandbox.test-stable.shopee.sg${path}` +
     `?partner_id=${partnerId}` +
-    `&timestamp=${timestamp}` +a
+    `&timestamp=${timestamp}` +
     `&sign=${sign}` +
     `&shop_id=${store.shop_id}`;
 
