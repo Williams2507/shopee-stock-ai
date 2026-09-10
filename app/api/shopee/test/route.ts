@@ -43,12 +43,12 @@ export async function GET() {
       .update(baseString)
       .digest("hex");
 
-const apiUrl =
-  `https://openplatform.sandbox.test-stable.shopee.sg${path}` +
-  `?partner_id=${partnerId}` +
-  `&timestamp=${timestamp}` +
-  `&sign=${sign}` +
-  `&shop_id=${store.shop_id}`;
+    const apiUrl =
+    `https://openplatform.sandbox.test-stable.shopee.sg${path}` +
+    `?partner_id=${partnerId}` +
+    `&timestamp=${timestamp}` +a
+    `&sign=${sign}` +
+    `&shop_id=${store.shop_id}`;
 
     const response = await fetch(apiUrl, {
       method: "GET",
