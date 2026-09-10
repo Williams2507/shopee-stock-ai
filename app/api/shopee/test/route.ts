@@ -36,12 +36,13 @@ export async function GET() {
     const path = "/api/v2/shop/get_shop_info";
     const timestamp = Math.floor(Date.now() / 1000);
 
-    const baseString = `${partnerId}${path}${timestamp}`;
+    const baseString =
+    `${partnerId}${path}${timestamp}${store.access_token}${store.shop_id}`;
 
     const sign = crypto
-      .createHmac("sha256", partnerKey)
-      .update(baseString)
-      .digest("hex");
+    .createHmac("sha256", partnerKey)
+    .update(baseString)
+    .digest("hex");
 
     const apiUrl =
     `https://openplatform.sandbox.test-stable.shopee.sg${path}` +
@@ -50,14 +51,14 @@ export async function GET() {
     `&sign=${sign}` +
     `&shop_id=${store.shop_id}` +
     `&access_token=${encodeURIComponent(store.access_token)}`;
-
-    const response = await fetch(apiUrl, {
-    method: "GET",
-    headers: {
-        "Content-Type": "application/json",
-    },
-    });
-
+    
+        const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        });
+        
     const data = await response.json();
 
     return NextResponse.json({
