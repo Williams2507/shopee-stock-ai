@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { supabaseAdmin } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
   try {
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
       );
     }
 
+    // 1. Trocar o code pelos tokens
     const path = "/api/v2/auth/token/get";
     const timestamp = Math.floor(Date.now() / 1000);
 
@@ -41,15 +43,13 @@ export async function GET(request: Request) {
       .update(baseString)
       .digest("hex");
 
-    const tokenUrl = new URL(
-      `https://openplatform.sandbox.test-stable.shopee.sg${path}`
-    );
+    const tokenUrl =
+      `https://openplatform.sandbox.test-stable.shopee.sg${path}` +
+      `?partner_id=${partnerId}` +
+      `&timestamp=${timestamp}` +
+      `&sign=${sign}`;
 
-    tokenUrl.searchParams.set("partner_id", partnerId);
-    tokenUrl.searchParams.set("timestamp", timestamp.toString());
-    tokenUrl.searchParams.set("sign", sign);
-
-    const response = await fetch(tokenUrl.toString(), {
+    const tokenResponse = await fetch(tokenUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -61,27 +61,63 @@ export async function GET(request: Request) {
       }),
     });
 
-    const data = await response.json();
+    const tokenData = await tokenResponse.json();
 
-    if (!response.ok || data.error) {
+    if (!tokenResponse.ok || tokenData.error) {
       return NextResponse.json(
         {
           success: false,
-          error: data.error || "Erro ao obter token da Shopee.",
-          message: data.message,
-          requestId: data.request_id,
+          error: tokenData.error || "Erro ao obter token da Shopee.",
+          message: tokenData.message,
         },
         { status: 400 }
       );
     }
 
+    // 2. Calcular expiração do access token
+    const expireIn = Number(tokenData.expire_in || 14400);
+
+    const tokenExpiresAt = new Date(
+      Date.now() + expireIn * 1000
+    ).toISOString();
+
+    // 3. Salvar/atualizar a loja no Supabase
+    const { data: store, error: storeError } = await supabaseAdmin
+      .from("stores")
+      .upsert(
+        {
+          shop_id: Number(shopId),
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          token_expires_at: tokenExpiresAt,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "shop_id",
+        }
+      )
+      .select()
+      .single();
+
+    if (storeError) {
+      console.error("Erro ao salvar loja:", storeError);
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Token obtido, mas não foi possível salvar a loja.",
+          details: storeError.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    // 4. Nunca devolver os tokens para o navegador
     return NextResponse.json({
       success: true,
-      message: "Loja Shopee autorizada com sucesso!",
-      shopId: data.shop_id,
-      expireIn: data.expire_in,
-      hasAccessToken: !!data.access_token,
-      hasRefreshToken: !!data.refresh_token,
+      message: "Loja Shopee conectada e salva com sucesso!",
+      shopId: store.shop_id,
+      tokenExpiresAt: store.token_expires_at,
     });
   } catch (error) {
     console.error("Erro no callback Shopee:", error);
