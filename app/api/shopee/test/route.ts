@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
 export async function GET() {
   try {
-    // Pega a loja conectada
     const { data: store, error: storeError } = await supabaseAdmin
       .from("stores")
       .select("*")
@@ -20,21 +20,47 @@ export async function GET() {
       );
     }
 
-    // Teste inicial da API da Shopee
-    const response = await fetch(
-      "https://openplatform.sandbox.test-stable.shopee.sg/api/v2/shop/get_shop_info",
-      {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${store.access_token}`,
+    const partnerId = process.env.SHOPEE_PARTNER_ID;
+    const partnerKey = process.env.SHOPEE_PARTNER_KEY;
+
+    if (!partnerId || !partnerKey) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Credenciais da Shopee não configuradas.",
         },
-      }
-    );
+        { status: 500 }
+      );
+    }
+
+    const path = "/api/v2/shop/get_shop_info";
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    const baseString = `${partnerId}${path}${timestamp}`;
+
+    const sign = crypto
+      .createHmac("sha256", partnerKey)
+      .update(baseString)
+      .digest("hex");
+
+    const apiUrl =
+      `https://openplatform.sandbox.test-stable.shopee.sg${path}` +
+      `?partner_id=${partnerId}` +
+      `&timestamp=${timestamp}` +
+      `&sign=${sign}`;
+
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${store.access_token}`,
+      },
+    });
 
     const data = await response.json();
 
     return NextResponse.json({
-      success: response.ok,
+      success: response.ok && !data.error,
       shopId: store.shop_id,
       shopeeResponse: data,
     });
