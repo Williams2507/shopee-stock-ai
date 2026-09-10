@@ -52,13 +52,15 @@ export async function GET() {
     `&shop_id=${store.shop_id}` +
     `&access_token=${encodeURIComponent(store.access_token)}`;
     
-        const response = await fetch(apiUrl, {
+    const response = await fetch(apiUrl, {
         method: "GET",
         headers: {
             "Content-Type": "application/json",
         },
-        });
-        
+    });
+
+    //aaa
+
     const data = await response.json();
 
     return NextResponse.json({
