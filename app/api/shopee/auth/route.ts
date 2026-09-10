@@ -27,7 +27,7 @@ export async function GET() {
     .digest("hex");
 
   const url = new URL(
-    `https://partner.shopeemobile.com${path}`
+    `https://openplatform.sandbox.test-stable.shopee.sg${path}`
   );
 
   url.searchParams.set("partner_id", partnerId);
