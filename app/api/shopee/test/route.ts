@@ -48,14 +48,14 @@ export async function GET() {
     `?partner_id=${partnerId}` +
     `&timestamp=${timestamp}` +
     `&sign=${sign}` +
-    `&shop_id=${store.shop_id}`;
+    `&shop_id=${store.shop_id}` +
+    `&access_token=${encodeURIComponent(store.access_token)}`;
 
     const response = await fetch(apiUrl, {
-      method: "GET",
-      headers: {
+    method: "GET",
+    headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${store.access_token}`,
-      },
+    },
     });
 
     const data = await response.json();
