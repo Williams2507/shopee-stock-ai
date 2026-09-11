@@ -7,20 +7,22 @@ export async function GET(request: Request) {
   try {
     // Proteção básica do endpoint
     const authHeader =
-      request.headers.get("authorization");
+    request.headers.get("authorization");
+
+    const cronSecret =
+    process.env.CRON_SECRET;
 
     if (
-      process.env.CRON_SECRET &&
-      authHeader !==
-        `Bearer ${process.env.CRON_SECRET}`
+    cronSecret &&
+    authHeader !== `Bearer ${cronSecret}`
     ) {
-      return NextResponse.json(
+    return NextResponse.json(
         {
-          success: false,
-          error: "Não autorizado.",
+        success: false,
+        error: "Não autorizado.",
         },
         { status: 401 }
-      );
+    );
     }
 
     // Busca todas as lojas conectadas
