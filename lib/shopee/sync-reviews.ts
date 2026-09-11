@@ -2,124 +2,117 @@ import { shopeeGet } from "./api";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
 export async function syncReviews(store: any) {
-  let offset = 0;
-  const pageSize = 50;
-
+  let cursor = "";
   let totalShopee = 0;
   let savedReviews = 0;
 
-  while (true) {
-    const data = await shopeeGet(
-      "/api/v2/product/get_rating_list",
-      store,
-      {
-        offset: offset.toString(),
-        page_size: pageSize.toString(),
-        rating_star: "0",
-      }
-    );
+  // Pega os produtos da loja
+  const { data: products, error: productsError } =
+    await supabaseAdmin
+      .from("products")
+      .select("id, shopee_item_id")
+      .eq("store_id", store.id);
 
-    const response = data.response;
+  if (productsError) {
+    throw productsError;
+  }
 
-    const reviews =
-      response?.ratings ||
-      response?.rating_list ||
-      [];
+  for (const product of products || []) {
+    cursor = "";
 
-    if (reviews.length === 0) {
-      break;
-    }
+    while (true) {
+      const params: Record<string, string> = {
+        item_id: String(product.shopee_item_id),
+        cursor,
+        page_size: "100",
+      };
 
-    totalShopee += reviews.length;
-
-    for (const review of reviews) {
-      const reviewId = Number(
-        review.rating_id ||
-          review.review_id ||
-          0
+      const data = await shopeeGet(
+        "/api/v2/product/get_comment",
+        store,
+        params
       );
 
-      if (!reviewId) {
-        continue;
-      }
+      const response = data.response;
 
-      const rating = Number(
-        review.rating_star || 0
-      );
+      const comments =
+        response?.item_comment_list || [];
 
-      const comment =
-        review.comment || "";
+      totalShopee += comments.length;
 
-      const { error } =
-        await supabaseAdmin
-          .from("reviews")
-          .upsert(
-            {
-              store_id: store.id,
-
-              shopee_review_id:
-                reviewId,
-
-              shopee_item_id:
-                review.item_id
-                  ? Number(review.item_id)
-                  : null,
-
-              shopee_model_id:
-                review.model_id
-                  ? Number(review.model_id)
-                  : null,
-
-              order_sn:
-                review.order_sn ||
-                null,
-
-              username:
-                review.author_username ||
-                review.username ||
-                null,
-
-              rating,
-
-              comment,
-
-              review_time:
-                review.create_time
-                  ? new Date(
-                      Number(
-                        review.create_time
-                      ) * 1000
-                    ).toISOString()
-                  : null,
-
-              updated_at:
-                new Date().toISOString(),
-            },
-            {
-              onConflict:
-                "store_id,shopee_review_id",
-            }
-          );
-
-      if (error) {
-        console.error(
-          "Erro salvando avaliação:",
-          error
+      for (const comment of comments) {
+        const reviewId = Number(
+          comment.comment_id || 0
         );
-        continue;
+
+        if (!reviewId) {
+          continue;
+        }
+
+        const rating = Number(
+          comment.rating_star || 0
+        );
+
+        const { error } =
+          await supabaseAdmin
+            .from("reviews")
+            .upsert(
+              {
+                store_id: store.id,
+                shopee_review_id: reviewId,
+                shopee_item_id:
+                  Number(
+                    comment.item_id ||
+                      product.shopee_item_id
+                  ),
+                shopee_model_id:
+                  comment.model_id
+                    ? Number(comment.model_id)
+                    : null,
+                username:
+                  comment.buyer_username ||
+                  null,
+                rating,
+                comment:
+                  comment.comment || "",
+                review_time:
+                  comment.ctime
+                    ? new Date(
+                        Number(comment.ctime) *
+                          1000
+                      ).toISOString()
+                    : null,
+                updated_at:
+                  new Date().toISOString(),
+              },
+              {
+                onConflict:
+                  "store_id,shopee_review_id",
+              }
+            );
+
+        if (error) {
+          console.error(
+            "Erro salvando avaliação:",
+            error
+          );
+          continue;
+        }
+
+        savedReviews++;
       }
 
-      savedReviews++;
-    }
+      if (response?.more !== true) {
+        break;
+      }
 
-    if (
-      response?.has_next_page !== true &&
-      response?.more !== true
-    ) {
-      break;
-    }
+      cursor =
+        response?.next_cursor || "";
 
-    offset += pageSize;
+      if (!cursor) {
+        break;
+      }
+    }
   }
 
   return {
