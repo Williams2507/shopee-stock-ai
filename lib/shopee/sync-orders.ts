@@ -1,5 +1,6 @@
 import { shopeeGet } from "./api";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { processOrder } from "./process-order";
 
 const ORDER_FIELDS = [
   "order_sn",
@@ -79,56 +80,6 @@ export async function syncOrders(store: any) {
       const detailedOrders =
         detailData.response?.order_list || [];
 
-      for (const order of detailedOrders) {
-        const { data: savedOrder, error } =
-          await supabaseAdmin
-            .from("orders")
-            .upsert(
-              {
-                store_id: store.id,
-
-                shopee_order_id:
-                  order.order_sn,
-
-                status:
-                  order.order_status,
-
-                total_amount: Number(
-                  order.total_amount || 0
-                ),
-
-                order_date: order.create_time
-                  ? new Date(
-                      Number(order.create_time) *
-                        1000
-                    ).toISOString()
-                  : new Date().toISOString(),
-
-                updated_at:
-                  new Date().toISOString(),
-              },
-              {
-                onConflict:
-                  "store_id,shopee_order_id",
-              }
-            )
-            .select()
-            .single();
-
-        if (error || !savedOrder) {
-          console.error(
-            "Erro salvando pedido:",
-            error
-          );
-
-          continue;
-        }
-
-        totalOrders++;
-
-        const items =
-          order.item_list || [];
-
         for (const item of items) {
           // Procura o produto
           const { data: product } =
@@ -151,9 +102,7 @@ export async function syncOrders(store: any) {
           ) {
             const { data: variation } =
               await supabaseAdmin
-                .from(
-                  "product_variations"
-                )
+                .from("product_variations")
                 .select("id")
                 .eq(
                   "product_id",
@@ -176,27 +125,21 @@ export async function syncOrders(store: any) {
                 {
                   order_id:
                     savedOrder.id,
-
                   product_id:
                     product?.id || null,
-
                   variation_id:
                     variationId,
-
                   shopee_item_id:
                     Number(item.item_id),
-
                   shopee_model_id:
                     Number(
                       item.model_id || 0
                     ),
-
                   quantity: Number(
                     item.model_quantity ||
                       item.quantity ||
                       1
                   ),
-
                   unit_price: Number(
                     item.model_discounted_price ||
                       item.model_original_price ||
@@ -219,8 +162,9 @@ export async function syncOrders(store: any) {
             );
           }
         }
-      }
-    }
+
+        // 🔥 Processa a venda e atualiza o estoque
+        await processOrder(store, order);
 
     hasMore =
       response?.more === true;
