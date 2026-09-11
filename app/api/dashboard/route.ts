@@ -1,9 +1,18 @@
 import { NextResponse } from "next/server";
-
 import { supabaseAdmin } from "@/lib/supabase/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+
+    const period = Number(searchParams.get("period") || 30);
+
+    const validPeriods = [1, 7, 30, 90];
+
+    const selectedPeriod = validPeriods.includes(period)
+      ? period
+      : 30;
+
     const { data: store, error: storeError } =
       await supabaseAdmin
         .from("stores")
@@ -21,20 +30,24 @@ export async function GET() {
       );
     }
 
-    // Produtos
+    // =========================
+    // PRODUTOS
+    // =========================
+
     const { data: products, error: productsError } =
       await supabaseAdmin
         .from("products")
         .select("*")
         .eq("store_id", store.id);
 
-    if (productsError) {
-      throw productsError;
-    }
+    if (productsError) throw productsError;
 
-    // Variações
     const productIds =
       products?.map((product) => product.id) || [];
+
+    // =========================
+    // VARIAÇÕES
+    // =========================
 
     let variations: any[] = [];
 
@@ -45,42 +58,9 @@ export async function GET() {
           .select("*")
           .in("product_id", productIds);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       variations = data || [];
-    }
-
-    // Pedidos
-    const { data: orders, error: ordersError } =
-      await supabaseAdmin
-        .from("orders")
-        .select("*")
-        .eq("store_id", store.id);
-
-    if (ordersError) {
-      throw ordersError;
-    }
-
-    // Itens dos pedidos
-    const orderIds =
-      orders?.map((order) => order.id) || [];
-
-    let orderItems: any[] = [];
-
-    if (orderIds.length > 0) {
-      const { data, error } =
-        await supabaseAdmin
-          .from("order_items")
-          .select("*")
-          .in("order_id", orderIds);
-
-      if (error) {
-        throw error;
-      }
-
-      orderItems = data || [];
     }
 
     // =========================
@@ -124,8 +104,29 @@ export async function GET() {
       );
 
     // =========================
-    // VENDAS
+    // PEDIDOS
     // =========================
+
+    const startDate = new Date();
+
+    startDate.setDate(
+      startDate.getDate() - selectedPeriod
+    );
+
+    const { data: orders, error: ordersError } =
+      await supabaseAdmin
+        .from("orders")
+        .select("*")
+        .eq("store_id", store.id)
+        .gte(
+          "order_date",
+          startDate.toISOString()
+        )
+        .order("order_date", {
+          ascending: false,
+        });
+
+    if (ordersError) throw ordersError;
 
     const validOrders =
       orders?.filter(
@@ -136,6 +137,33 @@ export async function GET() {
           ].includes(order.status)
       ) || [];
 
+    const orderIds =
+      validOrders.map(
+        (order) => order.id
+      );
+
+    // =========================
+    // ITENS DOS PEDIDOS
+    // =========================
+
+    let orderItems: any[] = [];
+
+    if (orderIds.length > 0) {
+      const { data, error } =
+        await supabaseAdmin
+          .from("order_items")
+          .select("*")
+          .in("order_id", orderIds);
+
+      if (error) throw error;
+
+      orderItems = data || [];
+    }
+
+    // =========================
+    // FATURAMENTO
+    // =========================
+
     const revenue = validOrders.reduce(
       (total, order) =>
         total +
@@ -143,7 +171,8 @@ export async function GET() {
       0
     );
 
-    const orderCount = validOrders.length;
+    const orderCount =
+      validOrders.length;
 
     // =========================
     // CUSTO DOS PRODUTOS
@@ -151,27 +180,35 @@ export async function GET() {
 
     let productCost = 0;
 
+    let unitsSold = 0;
+
     for (const item of orderItems) {
       const quantity =
         Number(item.quantity || 0);
+
+      unitsSold += quantity;
 
       if (item.variation_id) {
         const variation =
           variations.find(
             (v) =>
-              v.id === item.variation_id
+              v.id ===
+              item.variation_id
           );
 
         if (variation) {
           productCost +=
             quantity *
-            Number(variation.cost || 0);
+            Number(
+              variation.cost || 0
+            );
         }
       } else if (item.product_id) {
         const product =
           products?.find(
             (p) =>
-              p.id === item.product_id
+              p.id ===
+              item.product_id
           );
 
         if (product) {
@@ -181,6 +218,10 @@ export async function GET() {
         }
       }
     }
+
+    // =========================
+    // LUCRO
+    // =========================
 
     const grossProfit =
       revenue - productCost;
@@ -195,12 +236,10 @@ export async function GET() {
         ? (grossProfit / revenue) * 100
         : 0;
 
-    // =========================
-    // RESUMO
-    // =========================
-
     return NextResponse.json({
       success: true,
+
+      period: selectedPeriod,
 
       store: {
         id: store.id,
@@ -211,9 +250,11 @@ export async function GET() {
       },
 
       metrics: {
-        products: products?.length || 0,
+        products:
+          products?.length || 0,
 
-        variations: variations.length,
+        variations:
+          variations.length,
 
         totalStock,
 
@@ -223,7 +264,10 @@ export async function GET() {
 
         revenue,
 
-        orders: orderCount,
+        orders:
+          orderCount,
+
+        unitsSold,
 
         productCost,
 
@@ -236,11 +280,13 @@ export async function GET() {
 
       lowStock,
 
-      products: products || [],
+      products:
+        products || [],
 
       variations,
 
-      orders: orders || [],
+      orders:
+        orders || [],
 
       orderItems,
     });

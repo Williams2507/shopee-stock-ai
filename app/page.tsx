@@ -4,9 +4,13 @@ import { useEffect, useState } from "react";
 
 type DashboardData = {
   success: boolean;
+
+  period: number;
+
   products: any[];
   variations: any[];
-  metrics?: {
+
+  metrics: {
     products: number;
     variations: number;
     totalStock: number;
@@ -14,17 +18,22 @@ type DashboardData = {
     potentialProfit: number;
     revenue: number;
     orders: number;
+    unitsSold: number;
     productCost: number;
     grossProfit: number;
     averageOrderValue: number;
     margin: number;
   };
-  lowStock?: any[];
+
+  lowStock: any[];
 };
 
 export default function Home() {
   const [data, setData] =
     useState<DashboardData | null>(null);
+
+  const [period, setPeriod] =
+    useState(30);
 
   const [loading, setLoading] =
     useState(true);
@@ -32,13 +41,15 @@ export default function Home() {
   const [error, setError] =
     useState("");
 
-  async function loadDashboard() {
+  async function loadDashboard(
+    selectedPeriod = period
+  ) {
     try {
       setLoading(true);
       setError("");
 
       const response = await fetch(
-        "/api/dashboard",
+        `/api/dashboard?period=${selectedPeriod}`,
         {
           cache: "no-store",
         }
@@ -67,8 +78,8 @@ export default function Home() {
   }
 
   useEffect(() => {
-    loadDashboard();
-  }, []);
+    loadDashboard(period);
+  }, [period]);
 
   function money(value: number) {
     return new Intl.NumberFormat(
@@ -100,7 +111,9 @@ export default function Home() {
             </p>
 
             <button
-              onClick={loadDashboard}
+              onClick={() =>
+                loadDashboard()
+              }
               className="mt-4 px-4 py-2 rounded-lg bg-white text-black font-medium"
             >
               Tentar novamente
@@ -111,20 +124,9 @@ export default function Home() {
     );
   }
 
-  const metrics =
-    data?.metrics || {
-      products: 0,
-      variations: 0,
-      totalStock: 0,
-      inventoryValue: 0,
-      potentialProfit: 0,
-      revenue: 0,
-      orders: 0,
-      productCost: 0,
-      grossProfit: 0,
-      averageOrderValue: 0,
-      margin: 0,
-    };
+  if (!data) return null;
+
+  const metrics = data.metrics;
 
   return (
     <main className="min-h-screen bg-[#08090c] text-white">
@@ -149,93 +151,172 @@ export default function Home() {
           </div>
 
           <button
-            onClick={loadDashboard}
+            onClick={() =>
+              loadDashboard()
+            }
             className="px-5 py-2.5 rounded-xl bg-white text-black font-semibold hover:bg-zinc-200 transition"
           >
-            Atualizar dados
+            Atualizar
           </button>
 
         </header>
 
-        {/* PRINCIPAIS MÉTRICAS */}
+        {/* ESTOQUE */}
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
           <MetricCard
-            title="Faturamento"
-            value={money(metrics.revenue)}
-            subtitle={`${metrics.orders} pedidos`}
-          />
-
-          <MetricCard
-            title="Lucro bruto"
-            value={money(metrics.grossProfit)}
-            subtitle={`${metrics.margin.toFixed(1)}% de margem`}
+            title="Produtos"
+            value={metrics.products.toString()}
+            subtitle="Produtos cadastrados"
           />
 
           <MetricCard
             title="Estoque"
             value={metrics.totalStock.toString()}
-            subtitle={`${metrics.variations} variações`}
+            subtitle="Unidades disponíveis"
           />
 
           <MetricCard
             title="Valor do estoque"
-            value={money(metrics.inventoryValue)}
-            subtitle={`${metrics.products} produtos`}
+            value={money(
+              metrics.inventoryValue
+            )}
+            subtitle="Custo dos produtos"
           />
-
-        </section>
-
-        {/* SEGUNDA LINHA */}
-
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
 
           <MetricCard
             title="Lucro potencial"
             value={money(
               metrics.potentialProfit
             )}
-            subtitle="Se todo o estoque for vendido"
-          />
-
-          <MetricCard
-            title="Ticket médio"
-            value={money(
-              metrics.averageOrderValue
-            )}
-            subtitle="Por pedido"
-          />
-
-          <MetricCard
-            title="Custo dos produtos"
-            value={money(
-              metrics.productCost
-            )}
-            subtitle="Pedidos sincronizados"
+            subtitle="Se todo estoque vender"
           />
 
         </section>
 
-        {/* CONTEÚDO */}
+        {/* PERFORMANCE */}
+
+        <section className="bg-[#101116] border border-white/5 rounded-2xl p-6 mb-6">
+
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+
+            <div>
+              <h2 className="text-xl font-semibold">
+                Performance
+              </h2>
+
+              <p className="text-sm text-zinc-500 mt-1">
+                Desempenho das vendas no período
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+
+              {[1, 7, 30, 90].map(
+                (value) => (
+                  <button
+                    key={value}
+                    onClick={() =>
+                      setPeriod(value)
+                    }
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                      period === value
+                        ? "bg-white text-black"
+                        : "bg-white/5 text-zinc-400 hover:bg-white/10"
+                    }`}
+                  >
+                    {value === 1
+                      ? "Hoje"
+                      : `${value} dias`}
+                  </button>
+                )
+              )}
+
+            </div>
+
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+
+            <PerformanceCard
+              title="Faturamento"
+              value={money(
+                metrics.revenue
+              )}
+            />
+
+            <PerformanceCard
+              title="Pedidos"
+              value={metrics.orders.toString()}
+            />
+
+            <PerformanceCard
+              title="Unidades vendidas"
+              value={metrics.unitsSold.toString()}
+            />
+
+            <PerformanceCard
+              title="Lucro"
+              value={money(
+                metrics.grossProfit
+              )}
+            />
+
+            <PerformanceCard
+              title="Margem"
+              value={`${metrics.margin.toFixed(
+                1
+              )}%`}
+            />
+
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+
+            <div className="bg-white/[0.03] rounded-xl p-4">
+              <p className="text-xs text-zinc-500">
+                Ticket médio
+              </p>
+
+              <p className="text-xl font-bold mt-1">
+                {money(
+                  metrics.averageOrderValue
+                )}
+              </p>
+            </div>
+
+            <div className="bg-white/[0.03] rounded-xl p-4">
+              <p className="text-xs text-zinc-500">
+                Custo dos produtos
+              </p>
+
+              <p className="text-xl font-bold mt-1">
+                {money(
+                  metrics.productCost
+                )}
+              </p>
+            </div>
+
+          </div>
+
+        </section>
+
+        {/* ESTOQUE + ALERTAS */}
 
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* ESTOQUE */}
-
           <div className="lg:col-span-2 bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">
 
-            <div className="p-5 border-b border-white/5 flex justify-between items-center">
+            <div className="p-5 border-b border-white/5">
 
-              <div>
-                <h2 className="font-semibold text-lg">
-                  Estoque
-                </h2>
+              <h2 className="font-semibold text-lg">
+                Estoque
+              </h2>
 
-                <p className="text-sm text-zinc-500">
-                  Produtos e variações
-                </p>
-              </div>
+              <p className="text-sm text-zinc-500">
+                Produtos cadastrados no sistema
+              </p>
 
             </div>
 
@@ -245,6 +326,7 @@ export default function Home() {
 
                 <thead>
                   <tr className="text-left text-xs uppercase text-zinc-500 border-b border-white/5">
+
                     <th className="px-5 py-4">
                       Produto
                     </th>
@@ -264,12 +346,13 @@ export default function Home() {
                     <th className="px-5 py-4">
                       Estoque
                     </th>
+
                   </tr>
                 </thead>
 
                 <tbody>
 
-                  {data?.variations?.length ? (
+                  {data.variations.length ? (
 
                     data.variations.map(
                       (variation) => {
@@ -338,7 +421,7 @@ export default function Home() {
                                     : "bg-green-500/10 text-green-400"
                                 }`}
                               >
-                                {stock}
+                                {stock} un.
                               </span>
 
                             </td>
@@ -355,8 +438,7 @@ export default function Home() {
                         colSpan={5}
                         className="px-5 py-12 text-center text-zinc-500"
                       >
-                        Nenhum produto no
-                        estoque.
+                        Nenhum produto cadastrado.
                       </td>
                     </tr>
 
@@ -381,14 +463,14 @@ export default function Home() {
               </h2>
 
               <p className="text-sm text-zinc-500 mt-1">
-                Produtos que precisam de atenção
+                O que precisa da sua atenção
               </p>
 
             </div>
 
             <div className="p-5">
 
-              {data?.lowStock?.length ? (
+              {data.lowStock.length ? (
 
                 <div className="space-y-3">
 
@@ -439,11 +521,11 @@ export default function Home() {
                   </div>
 
                   <p className="font-medium">
-                    Tudo certo
+                    Tudo tranquilo 👍
                   </p>
 
                   <p className="text-sm text-zinc-500 mt-1">
-                    Nenhum estoque crítico.
+                    Nenhuma variação está com estoque baixo.
                   </p>
 
                 </div>
@@ -483,6 +565,28 @@ function MetricCard({
 
       <p className="text-xs text-zinc-600 mt-2">
         {subtitle}
+      </p>
+
+    </div>
+  );
+}
+
+function PerformanceCard({
+  title,
+  value,
+}: {
+  title: string;
+  value: string;
+}) {
+  return (
+    <div className="bg-white/[0.03] rounded-xl p-4">
+
+      <p className="text-xs text-zinc-500">
+        {title}
+      </p>
+
+      <p className="text-xl font-bold mt-2">
+        {value}
       </p>
 
     </div>
