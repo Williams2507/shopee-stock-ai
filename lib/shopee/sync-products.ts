@@ -1,229 +1,162 @@
 import { shopeeGet } from "./api";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
-const ORDER_FIELDS = [
-  "order_sn",
-  "order_status",
-  "buyer_user_id",
-  "buyer_username",
-  "estimated_shipping_fee",
-  "actual_shipping_fee",
-  "recipient_address",
-  "item_list",
-  "pay_time",
-  "shipping_carrier",
-  "payment_method",
-  "total_amount",
-  "cancel_by",
-  "cancel_reason",
-  "actual_shipping_fee_confirmed",
-  "pickup_done_time",
-  "package_list",
-].join(",");
+export async function syncProducts(store: any) {
+  let offset = 0;
+  const pageSize = 100;
 
-export async function syncOrders(store: any) {
-  let cursor = "";
-  let hasMore = true;
+  let totalShopee = 0;
+  let savedProducts = 0;
+  let savedVariations = 0;
 
-  let totalOrders = 0;
-  let totalItems = 0;
-
-  while (hasMore) {
-    const params: Record<string, string> = {
-      time_range_field: "create_time",
-
-      time_from: Math.floor(
-        (Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000
-      ).toString(),
-
-      time_to: Math.floor(Date.now() / 1000).toString(),
-
-      page_size: "50",
-    };
-
-    if (cursor) {
-      params.cursor = cursor;
-    }
-
-    // Busca lista de pedidos
+  while (true) {
     const listData = await shopeeGet(
-      "/api/v2/order/get_order_list",
+      "/api/v2/product/get_item_list",
       store,
-      params
+      {
+        offset: offset.toString(),
+        page_size: pageSize.toString(),
+        item_status: "NORMAL",
+      }
     );
 
     const response = listData.response;
 
-    const orderList = response?.order_list || [];
+    const items = response?.item || response?.item_list || [];
 
-    if (orderList.length === 0) {
+    if (items.length === 0) {
       break;
     }
 
-    // A Shopee permite consultar até 50 pedidos por vez
-    for (let i = 0; i < orderList.length; i += 50) {
-      const batch = orderList.slice(i, i + 50);
+    totalShopee += items.length;
 
-      const orderSnList = batch
-        .map((order: any) => order.order_sn)
-        .join(",");
+    const itemIds = items
+      .map((item: any) => Number(item.item_id))
+      .filter(Boolean);
 
-      // Busca detalhes dos pedidos
+    // A Shopee permite até 50 produtos por consulta de detalhes
+    for (let i = 0; i < itemIds.length; i += 50) {
+      const batchIds = itemIds.slice(i, i + 50);
+
       const detailData = await shopeeGet(
-        "/api/v2/order/get_order_detail",
+        "/api/v2/product/get_item_base_info",
         store,
         {
-          order_sn_list: orderSnList,
-          response_optional_fields: ORDER_FIELDS,
+          item_id_list: batchIds.join(","),
+          need_tax_info: "false",
+          need_complaint_policy: "false",
         }
       );
 
-      const detailedOrders =
-        detailData.response?.order_list || [];
+      const detailItems =
+        detailData.response?.item_list || [];
 
-      for (const order of detailedOrders) {
-        // Salva / atualiza pedido
-        const { data: savedOrder, error } =
+      for (const item of detailItems) {
+        const { data: savedProduct, error: productError } =
           await supabaseAdmin
-            .from("orders")
+            .from("products")
             .upsert(
               {
                 store_id: store.id,
 
-                shopee_order_id: order.order_sn,
+                shopee_item_id: Number(item.item_id),
 
-                status: order.order_status,
+                sku: item.item_sku || "",
 
-                total_amount: Number(
-                  order.total_amount || 0
+                name: item.item_name || "Produto Shopee",
+
+                price: Number(
+                  item.price_info?.current_price || 0
                 ),
 
-                order_date: order.create_time
-                  ? new Date(
-                      Number(order.create_time) * 1000
-                    ).toISOString()
-                  : new Date().toISOString(),
+                status: item.item_status || "NORMAL",
 
                 updated_at: new Date().toISOString(),
               },
               {
-                onConflict: "store_id,shopee_order_id",
+                onConflict: "store_id,shopee_item_id",
               }
             )
             .select()
             .single();
 
-        if (error || !savedOrder) {
+        if (productError || !savedProduct) {
           console.error(
-            "Erro salvando pedido:",
-            error
+            "Erro salvando produto:",
+            productError
           );
 
           continue;
         }
 
-        totalOrders++;
+        savedProducts++;
 
-        const items = order.item_list || [];
+        const models =
+          item.model_list ||
+          item.model_info?.model_list ||
+          [];
 
-        // Processa itens do pedido
-        for (const item of items) {
-          // Procura produto pelo item_id da Shopee
-          const { data: product } =
+        for (const model of models) {
+          const { error: variationError } =
             await supabaseAdmin
-              .from("products")
-              .select("id")
-              .eq("store_id", store.id)
-              .eq(
-                "shopee_item_id",
-                Number(item.item_id)
-              )
-              .maybeSingle();
-
-          let variationId = null;
-
-          // Procura variação pelo model_id
-          if (product && item.model_id) {
-            const { data: variation } =
-              await supabaseAdmin
-                .from("product_variations")
-                .select("id")
-                .eq(
-                  "product_id",
-                  product.id
-                )
-                .eq(
-                  "shopee_model_id",
-                  Number(item.model_id)
-                )
-                .maybeSingle();
-
-            variationId = variation?.id || null;
-          }
-
-          // Salva / atualiza item do pedido
-          const { error: itemError } =
-            await supabaseAdmin
-              .from("order_items")
+              .from("product_variations")
               .upsert(
                 {
-                  order_id: savedOrder.id,
-
-                  product_id:
-                    product?.id || null,
-
-                  variation_id:
-                    variationId,
-
-                  shopee_item_id:
-                    Number(item.item_id),
+                  product_id: savedProduct.id,
 
                   shopee_model_id:
-                    Number(item.model_id || 0),
+                    Number(model.model_id),
 
-                  quantity: Number(
-                    item.model_quantity ||
-                      item.quantity ||
-                      1
-                  ),
+                  sku: model.model_sku || "",
 
-                  unit_price: Number(
-                    item.model_discounted_price ||
-                      item.model_original_price ||
-                      item.model_price ||
+                  name:
+                    model.model_name ||
+                    "Variação",
+
+                  price: Number(
+                    model.price_info?.current_price ||
+                      model.current_price ||
                       0
                   ),
+
+                  // O estoque será sincronizado
+                  // em uma etapa específica.
+                  stock: 0,
+
+                  updated_at:
+                    new Date().toISOString(),
                 },
                 {
                   onConflict:
-                    "order_id,shopee_item_id,shopee_model_id",
+                    "product_id,shopee_model_id",
                 }
               );
 
-          if (!itemError) {
-            totalItems++;
-          } else {
+          if (variationError) {
             console.error(
-              "Erro salvando item:",
-              itemError
+              "Erro salvando variação:",
+              variationError
             );
+          } else {
+            savedVariations++;
           }
         }
       }
     }
 
-    // Paginação
-    hasMore = response?.more === true;
+    const hasNextPage =
+      response?.has_next_page === true;
 
-    cursor = response?.next_cursor || "";
-
-    if (!cursor) {
-      hasMore = false;
+    if (!hasNextPage) {
+      break;
     }
+
+    offset += pageSize;
   }
 
   return {
-    orders: totalOrders,
-    items: totalItems,
+    totalShopee,
+    savedProducts,
+    savedVariations,
   };
 }
