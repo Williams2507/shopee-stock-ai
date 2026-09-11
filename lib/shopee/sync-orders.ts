@@ -33,7 +33,7 @@ export async function syncOrders(store: any) {
       time_range_field: "create_time",
 
       time_from: Math.floor(
-        (Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000
+        (Date.now() - 14 * 24 * 60 * 60 * 1000) / 1000
       ).toString(),
 
       time_to: Math.floor(Date.now() / 1000).toString(),
