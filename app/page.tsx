@@ -2,330 +2,455 @@
 
 import { useEffect, useState } from "react";
 
-type Product = {
-  id: string;
-  name: string;
-  sku: string | null;
-  price: number;
-  cost: number;
-  status: string;
-};
-
-type Variation = {
-  id: string;
-  product_id: string;
-  name: string;
-  sku: string | null;
-  price: number;
-  cost: number;
-  stock: number;
+type DashboardData = {
+  success: boolean;
+  products: any[];
+  variations: any[];
+  metrics?: {
+    products: number;
+    variations: number;
+    totalStock: number;
+    inventoryValue: number;
+    potentialProfit: number;
+    revenue: number;
+    orders: number;
+    productCost: number;
+    grossProfit: number;
+    averageOrderValue: number;
+    margin: number;
+  };
+  lowStock?: any[];
 };
 
 export default function Home() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [variations, setVariations] = useState<Variation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] =
+    useState<DashboardData | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  async function loadDashboard() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch(
+        "/api/dashboard",
+        {
+          cache: "no-store",
+        }
+      );
+
+      const result =
+        await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.error ||
+            "Erro ao carregar dashboard."
+        );
+      }
+
+      setData(result);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Erro desconhecido."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function loadDashboard() {
-      try {
-        const response = await fetch("/api/dashboard");
-        const data = await response.json();
-
-        if (data.success) {
-          setProducts(data.products);
-          setVariations(data.variations);
-        }
-      } catch (error) {
-        console.error("Erro ao carregar dashboard:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadDashboard();
   }, []);
 
-  const totalStock = variations.reduce(
-    (total, variation) => total + Number(variation.stock || 0),
-    0
-  );
-
-  const inventoryValue = variations.reduce(
-    (total, variation) =>
-      total +
-      Number(variation.stock || 0) *
-        Number(variation.cost || 0),
-    0
-  );
-
-  const potentialRevenue = variations.reduce(
-    (total, variation) =>
-      total +
-      Number(variation.stock || 0) *
-        Number(variation.price || 0),
-    0
-  );
-
-  const potentialProfit = variations.reduce(
-    (total, variation) =>
-      total +
-      Number(variation.stock || 0) *
-        (Number(variation.price || 0) -
-          Number(variation.cost || 0)),
-    0
-  );
-
-  const lowStock = variations.filter(
-    (variation) => Number(variation.stock) <= 5
-  );
+  function money(value: number) {
+    return new Intl.NumberFormat(
+      "pt-BR",
+      {
+        style: "currency",
+        currency: "BRL",
+      }
+    ).format(value || 0);
+  }
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
-        <p className="text-zinc-400">
+      <main className="min-h-screen bg-[#08090c] text-white flex items-center justify-center">
+        <div className="text-zinc-400">
           Carregando dashboard...
-        </p>
+        </div>
       </main>
     );
   }
 
+  if (error) {
+    return (
+      <main className="min-h-screen bg-[#08090c] text-white p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-5">
+            <p className="text-red-400">
+              {error}
+            </p>
+
+            <button
+              onClick={loadDashboard}
+              className="mt-4 px-4 py-2 rounded-lg bg-white text-black font-medium"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  const metrics =
+    data?.metrics || {
+      products: 0,
+      variations: 0,
+      totalStock: 0,
+      inventoryValue: 0,
+      potentialProfit: 0,
+      revenue: 0,
+      orders: 0,
+      productCost: 0,
+      grossProfit: 0,
+      averageOrderValue: 0,
+      margin: 0,
+    };
+
   return (
-    <main className="min-h-screen bg-zinc-950 text-white">
+    <main className="min-h-screen bg-[#08090c] text-white">
       <div className="max-w-7xl mx-auto px-6 py-8">
 
         {/* HEADER */}
 
-        <div className="flex items-center justify-between mb-8">
+        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-5 mb-8">
+
           <div>
+            <p className="text-sm text-zinc-500 mb-1">
+              Shopee Stock AI
+            </p>
+
             <h1 className="text-3xl font-bold">
               Dashboard
             </h1>
 
-            <p className="text-zinc-400 mt-1">
-              Visão geral da sua loja Shopee
+            <p className="text-zinc-500 mt-1">
+              Visão geral da sua operação
             </p>
           </div>
 
           <button
-            onClick={() => window.location.reload()}
-            className="bg-white text-black px-4 py-2 rounded-lg font-medium hover:bg-zinc-200"
+            onClick={loadDashboard}
+            className="px-5 py-2.5 rounded-xl bg-white text-black font-semibold hover:bg-zinc-200 transition"
           >
-            Atualizar
+            Atualizar dados
           </button>
-        </div>
 
-        {/* CARDS */}
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+        {/* PRINCIPAIS MÉTRICAS */}
+
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
           <MetricCard
-            title="Produtos"
-            value={products.length.toString()}
-            description="Produtos cadastrados"
+            title="Faturamento"
+            value={money(metrics.revenue)}
+            subtitle={`${metrics.orders} pedidos`}
+          />
+
+          <MetricCard
+            title="Lucro bruto"
+            value={money(metrics.grossProfit)}
+            subtitle={`${metrics.margin.toFixed(1)}% de margem`}
           />
 
           <MetricCard
             title="Estoque"
-            value={totalStock.toString()}
-            description="Unidades disponíveis"
+            value={metrics.totalStock.toString()}
+            subtitle={`${metrics.variations} variações`}
           />
 
           <MetricCard
             title="Valor do estoque"
-            value={formatMoney(inventoryValue)}
-            description="Custo dos produtos"
+            value={money(metrics.inventoryValue)}
+            subtitle={`${metrics.products} produtos`}
           />
 
-          <MetricCard
-            title="Lucro potencial"
-            value={formatMoney(potentialProfit)}
-            description="Se todo estoque vender"
-          />
-
-        </div>
+        </section>
 
         {/* SEGUNDA LINHA */}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
 
-          {/* RESUMO */}
+          <MetricCard
+            title="Lucro potencial"
+            value={money(
+              metrics.potentialProfit
+            )}
+            subtitle="Se todo o estoque for vendido"
+          />
 
-          <section className="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          <MetricCard
+            title="Ticket médio"
+            value={money(
+              metrics.averageOrderValue
+            )}
+            subtitle="Por pedido"
+          />
 
-            <div className="flex justify-between items-center mb-6">
+          <MetricCard
+            title="Custo dos produtos"
+            value={money(
+              metrics.productCost
+            )}
+            subtitle="Pedidos sincronizados"
+          />
+
+        </section>
+
+        {/* CONTEÚDO */}
+
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* ESTOQUE */}
+
+          <div className="lg:col-span-2 bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">
+
+            <div className="p-5 border-b border-white/5 flex justify-between items-center">
 
               <div>
-                <h2 className="text-xl font-semibold">
+                <h2 className="font-semibold text-lg">
                   Estoque
                 </h2>
 
-                <p className="text-zinc-500 text-sm">
-                  Produtos cadastrados no sistema
+                <p className="text-sm text-zinc-500">
+                  Produtos e variações
                 </p>
               </div>
 
-              <span className="text-sm text-zinc-400">
-                {variations.length} variações
-              </span>
-
             </div>
 
-            <div className="space-y-3">
+            <div className="overflow-x-auto">
 
-              {variations.map((variation) => {
+              <table className="w-full">
 
-                const product = products.find(
-                  (product) =>
-                    product.id === variation.product_id
-                );
+                <thead>
+                  <tr className="text-left text-xs uppercase text-zinc-500 border-b border-white/5">
+                    <th className="px-5 py-4">
+                      Produto
+                    </th>
 
-                return (
-                  <div
-                    key={variation.id}
-                    className="flex items-center justify-between bg-zinc-950 border border-zinc-800 rounded-xl p-4"
-                  >
+                    <th className="px-5 py-4">
+                      SKU
+                    </th>
 
-                    <div>
-                      <p className="font-medium">
-                        {product?.name || "Produto"}
-                      </p>
+                    <th className="px-5 py-4">
+                      Preço
+                    </th>
 
-                      <p className="text-sm text-zinc-500">
-                        {variation.name}
-                        {variation.sku
-                          ? ` • ${variation.sku}`
-                          : ""}
-                      </p>
-                    </div>
+                    <th className="px-5 py-4">
+                      Custo
+                    </th>
 
-                    <div className="text-right">
+                    <th className="px-5 py-4">
+                      Estoque
+                    </th>
+                  </tr>
+                </thead>
 
-                      <p className="font-semibold">
-                        {variation.stock} un.
-                      </p>
+                <tbody>
 
-                      <p
-                        className={`text-sm ${
-                          variation.stock <= 5
-                            ? "text-red-400"
-                            : "text-zinc-500"
-                        }`}
+                  {data?.variations?.length ? (
+
+                    data.variations.map(
+                      (variation) => {
+
+                        const product =
+                          data.products.find(
+                            (p) =>
+                              p.id ===
+                              variation.product_id
+                          );
+
+                        const stock =
+                          Number(
+                            variation.stock || 0
+                          );
+
+                        return (
+                          <tr
+                            key={variation.id}
+                            className="border-b border-white/5 hover:bg-white/[0.02]"
+                          >
+
+                            <td className="px-5 py-4">
+
+                              <div className="font-medium">
+                                {product?.name ||
+                                  "Produto"}
+                              </div>
+
+                              <div className="text-xs text-zinc-500 mt-1">
+                                {variation.name}
+                              </div>
+
+                            </td>
+
+                            <td className="px-5 py-4 text-sm text-zinc-400">
+                              {variation.sku ||
+                                product?.sku ||
+                                "-"}
+                            </td>
+
+                            <td className="px-5 py-4 text-sm">
+                              {money(
+                                Number(
+                                  variation.price ||
+                                    0
+                                )
+                              )}
+                            </td>
+
+                            <td className="px-5 py-4 text-sm text-zinc-400">
+                              {money(
+                                Number(
+                                  variation.cost ||
+                                    0
+                                )
+                              )}
+                            </td>
+
+                            <td className="px-5 py-4">
+
+                              <span
+                                className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                                  stock <= 5
+                                    ? "bg-red-500/10 text-red-400"
+                                    : "bg-green-500/10 text-green-400"
+                                }`}
+                              >
+                                {stock}
+                              </span>
+
+                            </td>
+
+                          </tr>
+                        );
+                      }
+                    )
+
+                  ) : (
+
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="px-5 py-12 text-center text-zinc-500"
                       >
-                        {variation.stock <= 5
-                          ? "Estoque baixo"
-                          : "Estoque normal"}
-                      </p>
+                        Nenhum produto no
+                        estoque.
+                      </td>
+                    </tr>
 
-                    </div>
+                  )}
 
-                  </div>
-                );
-              })}
+                </tbody>
+
+              </table>
 
             </div>
-
-          </section>
-
-          {/* ALERTAS */}
-
-          <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-
-            <h2 className="text-xl font-semibold mb-1">
-              Alertas
-            </h2>
-
-            <p className="text-zinc-500 text-sm mb-6">
-              O que precisa da sua atenção
-            </p>
-
-            {lowStock.length === 0 ? (
-
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                <p className="font-medium">
-                  Tudo tranquilo 👍
-                </p>
-
-                <p className="text-sm text-zinc-500 mt-1">
-                  Nenhuma variação está com estoque baixo.
-                </p>
-              </div>
-
-            ) : (
-
-              <div className="space-y-3">
-
-                {lowStock.map((variation) => (
-
-                  <div
-                    key={variation.id}
-                    className="bg-zinc-950 border border-red-900/50 rounded-xl p-4"
-                  >
-
-                    <p className="font-medium text-red-400">
-                      Estoque baixo
-                    </p>
-
-                    <p className="text-sm text-zinc-400 mt-1">
-                      {variation.name} —{" "}
-                      {variation.stock} unidades
-                    </p>
-
-                  </div>
-
-                ))}
-
-              </div>
-
-            )}
-
-          </section>
-
-        </div>
-
-        {/* MÉTRICAS FUTURAS */}
-
-        <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-
-          <div className="flex items-center justify-between mb-6">
-
-            <div>
-              <h2 className="text-xl font-semibold">
-                Performance
-              </h2>
-
-              <p className="text-zinc-500 text-sm">
-                Métricas que serão alimentadas automaticamente pela Shopee
-              </p>
-            </div>
-
-            <span className="px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-xs">
-              Sincronização em desenvolvimento
-            </span>
 
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* ALERTAS */}
 
-            <FutureMetric
-              title="Faturamento"
-              value="R$ 0,00"
-            />
+          <div className="bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">
 
-            <FutureMetric
-              title="Pedidos"
-              value="0"
-            />
+            <div className="p-5 border-b border-white/5">
 
-            <FutureMetric
-              title="Lucro"
-              value="R$ 0,00"
-            />
+              <h2 className="font-semibold text-lg">
+                Alertas
+              </h2>
 
-            <FutureMetric
-              title="Avaliações pendentes"
-              value="0"
-            />
+              <p className="text-sm text-zinc-500 mt-1">
+                Produtos que precisam de atenção
+              </p>
+
+            </div>
+
+            <div className="p-5">
+
+              {data?.lowStock?.length ? (
+
+                <div className="space-y-3">
+
+                  {data.lowStock.map(
+                    (variation) => {
+
+                      const product =
+                        data.products.find(
+                          (p) =>
+                            p.id ===
+                            variation.product_id
+                        );
+
+                      return (
+                        <div
+                          key={variation.id}
+                          className="p-4 rounded-xl bg-red-500/5 border border-red-500/10"
+                        >
+
+                          <div className="font-medium text-sm">
+                            {product?.name ||
+                              "Produto"}
+                          </div>
+
+                          <div className="text-xs text-zinc-500 mt-1">
+                            {variation.name}
+                          </div>
+
+                          <div className="text-xs text-red-400 mt-3 font-semibold">
+                            Apenas{" "}
+                            {variation.stock}{" "}
+                            em estoque
+                          </div>
+
+                        </div>
+                      );
+                    }
+                  )}
+
+                </div>
+
+              ) : (
+
+                <div className="py-10 text-center">
+
+                  <div className="text-3xl mb-3">
+                    ✓
+                  </div>
+
+                  <p className="font-medium">
+                    Tudo certo
+                  </p>
+
+                  <p className="text-sm text-zinc-500 mt-1">
+                    Nenhum estoque crítico.
+                  </p>
+
+                </div>
+
+              )}
+
+            </div>
 
           </div>
 
@@ -339,14 +464,14 @@ export default function Home() {
 function MetricCard({
   title,
   value,
-  description,
+  subtitle,
 }: {
   title: string;
   value: string;
-  description: string;
+  subtitle: string;
 }) {
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+    <div className="bg-[#101116] border border-white/5 rounded-2xl p-5">
 
       <p className="text-sm text-zinc-500">
         {title}
@@ -357,38 +482,9 @@ function MetricCard({
       </p>
 
       <p className="text-xs text-zinc-600 mt-2">
-        {description}
+        {subtitle}
       </p>
 
     </div>
   );
-}
-
-function FutureMetric({
-  title,
-  value,
-}: {
-  title: string;
-  value: string;
-}) {
-  return (
-    <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-
-      <p className="text-sm text-zinc-500">
-        {title}
-      </p>
-
-      <p className="text-xl font-bold mt-2">
-        {value}
-      </p>
-
-    </div>
-  );
-}
-
-function formatMoney(value: number) {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
 }
