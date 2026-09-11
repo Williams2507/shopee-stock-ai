@@ -22,7 +22,10 @@ export async function syncProducts(store: any) {
 
     const response = listData.response;
 
-    const items = response?.item || response?.item_list || [];
+    const items =
+      response?.item ||
+      response?.item_list ||
+      [];
 
     if (items.length === 0) {
       break;
@@ -34,7 +37,6 @@ export async function syncProducts(store: any) {
       .map((item: any) => Number(item.item_id))
       .filter(Boolean);
 
-    // A Shopee permite até 50 produtos por consulta de detalhes
     for (let i = 0; i < itemIds.length; i += 50) {
       const batchIds = itemIds.slice(i, i + 50);
 
@@ -59,22 +61,31 @@ export async function syncProducts(store: any) {
               {
                 store_id: store.id,
 
-                shopee_item_id: Number(item.item_id),
+                shopee_item_id:
+                  Number(item.item_id),
 
                 sku: item.item_sku || "",
 
-                name: item.item_name || "Produto Shopee",
+                name:
+                  item.item_name ||
+                  "Produto Shopee",
 
                 price: Number(
-                  item.price_info?.current_price || 0
+                  item.price_info?.current_price ||
+                    item.price_info?.[0]?.current_price ||
+                    0
                 ),
 
-                status: item.item_status || "NORMAL",
+                status:
+                  item.item_status ||
+                  "NORMAL",
 
-                updated_at: new Date().toISOString(),
+                updated_at:
+                  new Date().toISOString(),
               },
               {
-                onConflict: "store_id,shopee_item_id",
+                onConflict:
+                  "store_id,shopee_item_id",
               }
             )
             .select()
@@ -91,37 +102,157 @@ export async function syncProducts(store: any) {
 
         savedProducts++;
 
-        const models =
-          item.model_list ||
-          item.model_info?.model_list ||
-          [];
+        /*
+         * Busca as variações diretamente pelo
+         * endpoint get_model_list.
+         *
+         * Isso é importante porque o estoque
+         * atual fica em stock_info_v2.
+         */
+        const modelData = await shopeeGet(
+          "/api/v2/product/get_model_list",
+          store,
+          {
+            item_id:
+              Number(item.item_id).toString(),
+          }
+        );
 
-        for (const model of models) {
+        const models =
+          modelData.response?.model || [];
+
+        /*
+         * Produto sem variação
+         */
+        if (models.length === 0) {
+          const stockInfo =
+            item.stock_info_v2;
+
+          let stock = 0;
+
+          if (stockInfo) {
+            if (
+              typeof stockInfo.current_stock ===
+              "number"
+            ) {
+              stock =
+                stockInfo.current_stock;
+            } else if (
+              Array.isArray(stockInfo) &&
+              stockInfo.length > 0
+            ) {
+              stock = Number(
+                stockInfo[0]
+                  ?.current_stock || 0
+              );
+            }
+          }
+
+          /*
+           * Mantemos uma variação virtual
+           * model_id = 0 para produtos sem modelo.
+           */
           const { error: variationError } =
             await supabaseAdmin
               .from("product_variations")
               .upsert(
                 {
-                  product_id: savedProduct.id,
+                  product_id:
+                    savedProduct.id,
+
+                  shopee_model_id: 0,
+
+                  sku:
+                    item.item_sku || "",
+
+                  name: "Único",
+
+                  price: Number(
+                    item.price_info
+                      ?.current_price ||
+                      item.price_info?.[0]
+                        ?.current_price ||
+                      0
+                  ),
+
+                  stock,
+
+                  updated_at:
+                    new Date().toISOString(),
+                },
+                {
+                  onConflict:
+                    "product_id,shopee_model_id",
+                }
+              );
+
+          if (variationError) {
+            console.error(
+              "Erro salvando estoque:",
+              variationError
+            );
+          } else {
+            savedVariations++;
+          }
+
+          continue;
+        }
+
+        /*
+         * Produto com variações
+         */
+        for (const model of models) {
+          const stockInfo =
+            model.stock_info_v2;
+
+          let stock = 0;
+
+          if (stockInfo) {
+            if (
+              typeof stockInfo.current_stock ===
+              "number"
+            ) {
+              stock =
+                stockInfo.current_stock;
+            } else if (
+              Array.isArray(stockInfo) &&
+              stockInfo.length > 0
+            ) {
+              stock = Number(
+                stockInfo[0]
+                  ?.current_stock || 0
+              );
+            }
+          }
+
+          const price =
+            model.price_info?.[0]
+              ?.current_price ||
+            model.price_info
+              ?.current_price ||
+            0;
+
+          const { error: variationError } =
+            await supabaseAdmin
+              .from("product_variations")
+              .upsert(
+                {
+                  product_id:
+                    savedProduct.id,
 
                   shopee_model_id:
                     Number(model.model_id),
 
-                  sku: model.model_sku || "",
+                  sku:
+                    model.model_sku || "",
 
                   name:
                     model.model_name ||
-                    "Variação",
+                    `Variação ${model.model_id}`,
 
-                  price: Number(
-                    model.price_info?.current_price ||
-                      model.current_price ||
-                      0
-                  ),
+                  price: Number(price),
 
-                  // O estoque será sincronizado
-                  // em uma etapa específica.
-                  stock: 0,
+                  stock,
 
                   updated_at:
                     new Date().toISOString(),
@@ -144,10 +275,7 @@ export async function syncProducts(store: any) {
       }
     }
 
-    const hasNextPage =
-      response?.has_next_page === true;
-
-    if (!hasNextPage) {
+    if (response?.has_next_page !== true) {
       break;
     }
 
