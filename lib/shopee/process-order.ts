@@ -4,21 +4,6 @@ export async function processOrder(
   store: any,
   order: any
 ) {
-  // Busca o pedido já salvo
-  const { data: savedOrder, error: orderError } =
-    await supabaseAdmin
-      .from("orders")
-      .select("id")
-      .eq("store_id", store.id)
-      .eq("shopee_order_id", order.order_sn)
-      .single();
-
-  if (orderError || !savedOrder) {
-    throw new Error(
-      `Pedido ${order.order_sn} não encontrado no banco.`
-    );
-  }
-
   const items = order.item_list || [];
 
   for (const item of items) {
@@ -51,7 +36,7 @@ export async function processOrder(
     const { data: variation } =
       await supabaseAdmin
         .from("product_variations")
-        .select("id, stock")
+        .select("id")
         .eq("product_id", product.id)
         .eq("shopee_model_id", modelId)
         .maybeSingle();
@@ -63,10 +48,11 @@ export async function processOrder(
       continue;
     }
 
-    // Evita descontar o mesmo pedido duas vezes
+    // Identificador único dessa venda
     const referenceId =
       `${order.order_sn}-${itemId}-${modelId}`;
 
+    // Evita registrar a mesma venda duas vezes
     const { data: existingMovement } =
       await supabaseAdmin
         .from("inventory_movements")
@@ -79,31 +65,9 @@ export async function processOrder(
       continue;
     }
 
-    const currentStock =
-      Number(variation.stock || 0);
-
-    const newStock =
-      Math.max(
-        0,
-        currentStock - quantity
-      );
-
-    // Atualiza estoque
-    const { error: stockError } =
-      await supabaseAdmin
-        .from("product_variations")
-        .update({
-          stock: newStock,
-          updated_at:
-            new Date().toISOString(),
-        })
-        .eq("id", variation.id);
-
-    if (stockError) {
-      throw stockError;
-    }
-
-    // Registra movimentação
+    // Registra a movimentação.
+    // O estoque NÃO é alterado aqui.
+    // O syncProducts mantém o estoque igual ao da Shopee.
     const { error: movementError } =
       await supabaseAdmin
         .from("inventory_movements")
