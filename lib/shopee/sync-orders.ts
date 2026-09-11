@@ -34,10 +34,14 @@ export async function syncOrders(store: any) {
       time_range_field: "create_time",
 
       time_from: Math.floor(
-        (Date.now() - 14 * 24 * 60 * 60 * 1000) / 1000
+        (Date.now() -
+          14 * 24 * 60 * 60 * 1000) /
+          1000
       ).toString(),
 
-      time_to: Math.floor(Date.now() / 1000).toString(),
+      time_to: Math.floor(
+        Date.now() / 1000
+      ).toString(),
 
       page_size: "50",
     };
@@ -61,32 +65,110 @@ export async function syncOrders(store: any) {
       break;
     }
 
-    for (let i = 0; i < orderList.length; i += 50) {
-      const batch = orderList.slice(i, i + 50);
+    for (
+      let i = 0;
+      i < orderList.length;
+      i += 50
+    ) {
+      const batch =
+        orderList.slice(i, i + 50);
 
       const orderSnList = batch
-        .map((order: any) => order.order_sn)
+        .map(
+          (order: any) =>
+            order.order_sn
+        )
         .join(",");
 
-      const detailData = await shopeeGet(
-        "/api/v2/order/get_order_detail",
-        store,
-        {
-          order_sn_list: orderSnList,
-          response_optional_fields: ORDER_FIELDS,
-        }
-      );
+      const detailData =
+        await shopeeGet(
+          "/api/v2/order/get_order_detail",
+          store,
+          {
+            order_sn_list:
+              orderSnList,
+
+            response_optional_fields:
+              ORDER_FIELDS,
+          }
+        );
 
       const detailedOrders =
-        detailData.response?.order_list || [];
+        detailData.response
+          ?.order_list || [];
+
+      for (const order of detailedOrders) {
+        // =========================
+        // SALVAR PEDIDO
+        // =========================
+
+        const {
+          data: savedOrder,
+          error,
+        } = await supabaseAdmin
+          .from("orders")
+          .upsert(
+            {
+              store_id: store.id,
+
+              shopee_order_id:
+                order.order_sn,
+
+              status:
+                order.order_status,
+
+              total_amount: Number(
+                order.total_amount || 0
+              ),
+
+              order_date:
+                order.create_time
+                  ? new Date(
+                      Number(
+                        order.create_time
+                      ) * 1000
+                    ).toISOString()
+                  : new Date().toISOString(),
+
+              updated_at:
+                new Date().toISOString(),
+            },
+            {
+              onConflict:
+                "store_id,shopee_order_id",
+            }
+          )
+          .select()
+          .single();
+
+        if (error || !savedOrder) {
+          console.error(
+            "Erro salvando pedido:",
+            error
+          );
+
+          continue;
+        }
+
+        totalOrders++;
+
+        // =========================
+        // SALVAR ITENS
+        // =========================
+
+        const items =
+          order.item_list || [];
 
         for (const item of items) {
-          // Procura o produto
+          // Procura produto
           const { data: product } =
             await supabaseAdmin
               .from("products")
               .select("id")
-              .eq("store_id", store.id)
+              .eq(
+                "store_id",
+                store.id
+              )
               .eq(
                 "shopee_item_id",
                 Number(item.item_id)
@@ -95,14 +177,18 @@ export async function syncOrders(store: any) {
 
           let variationId = null;
 
-          // Procura a variação
+          // Procura variação
           if (
             product &&
             item.model_id
           ) {
-            const { data: variation } =
+            const {
+              data: variation,
+            } =
               await supabaseAdmin
-                .from("product_variations")
+                .from(
+                  "product_variations"
+                )
                 .select("id")
                 .eq(
                   "product_id",
@@ -110,7 +196,9 @@ export async function syncOrders(store: any) {
                 )
                 .eq(
                   "shopee_model_id",
-                  Number(item.model_id)
+                  Number(
+                    item.model_id
+                  )
                 )
                 .maybeSingle();
 
@@ -118,40 +206,51 @@ export async function syncOrders(store: any) {
               variation?.id || null;
           }
 
-          const { error: itemError } =
-            await supabaseAdmin
-              .from("order_items")
-              .upsert(
-                {
-                  order_id:
-                    savedOrder.id,
-                  product_id:
-                    product?.id || null,
-                  variation_id:
-                    variationId,
-                  shopee_item_id:
-                    Number(item.item_id),
-                  shopee_model_id:
-                    Number(
-                      item.model_id || 0
-                    ),
-                  quantity: Number(
-                    item.model_quantity ||
-                      item.quantity ||
-                      1
+          // Salva item
+          const {
+            error: itemError,
+          } = await supabaseAdmin
+            .from("order_items")
+            .upsert(
+              {
+                order_id:
+                  savedOrder.id,
+
+                product_id:
+                  product?.id ||
+                  null,
+
+                variation_id:
+                  variationId,
+
+                shopee_item_id:
+                  Number(
+                    item.item_id
                   ),
-                  unit_price: Number(
-                    item.model_discounted_price ||
-                      item.model_original_price ||
-                      item.model_price ||
-                      0
+
+                shopee_model_id:
+                  Number(
+                    item.model_id || 0
                   ),
-                },
-                {
-                  onConflict:
-                    "order_id,shopee_item_id,shopee_model_id",
-                }
-              );
+
+                quantity: Number(
+                  item.model_quantity ||
+                    item.quantity ||
+                    1
+                ),
+
+                unit_price: Number(
+                  item.model_discounted_price ||
+                    item.model_original_price ||
+                    item.model_price ||
+                    0
+                ),
+              },
+              {
+                onConflict:
+                  "order_id,shopee_item_id,shopee_model_id",
+              }
+            );
 
           if (!itemError) {
             totalItems++;
@@ -163,8 +262,20 @@ export async function syncOrders(store: any) {
           }
         }
 
-        // 🔥 Processa a venda e atualiza o estoque
-        await processOrder(store, order);
+        // =========================
+        // ATUALIZAR ESTOQUE
+        // =========================
+
+        await processOrder(
+          store,
+          order
+        );
+      }
+    }
+
+    // =========================
+    // PAGINAÇÃO
+    // =========================
 
     hasMore =
       response?.more === true;
