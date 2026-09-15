@@ -213,11 +213,18 @@ export async function POST(request: Request) {
 
     if (
       !response.ok ||
-      data.error
+      data.error ||
+      data.result_list
     ) {
+      console.error(
+        "ERRO SHOPEE reply_comment:",
+        JSON.stringify(data, null, 2)
+      );
+
       throw new Error(
         data.message ||
           data.error ||
+          JSON.stringify(data.result_list) ||
           "Erro ao enviar resposta para a Shopee."
       );
     }
