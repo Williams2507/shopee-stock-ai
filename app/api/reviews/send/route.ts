@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
+
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { shopeeGet } from "@/lib/shopee/api";
+import { refreshShopeeToken } from "@/lib/shopee/refresh-token";
+
+const SHOPEE_HOST =
+  "https://openplatform.sandbox.test-stable.shopee.sg";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-
     const reviewId = body.reviewId;
 
     if (!reviewId) {
@@ -46,7 +50,8 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Esta avaliação ainda não possui uma resposta.",
+          error:
+            "Esta avaliação ainda não possui uma resposta.",
         },
         { status: 400 }
       );
@@ -62,7 +67,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Envia para a Shopee
+    // Busca a loja
     const { data: store, error: storeError } =
       await supabaseAdmin
         .from("stores")
@@ -80,14 +85,54 @@ export async function POST(request: Request) {
       );
     }
 
+    // =====================================================
+    // RENOVA TOKEN SE ESTIVER EXPIRADO OU PERTO DE EXPIRAR
+    // =====================================================
+
+    let currentStore = store;
+
+    if (store.token_expires_at) {
+      const expiresAt =
+        new Date(store.token_expires_at).getTime();
+
+      const now = Date.now();
+
+      const fiveMinutes =
+        5 * 60 * 1000;
+
+      if (expiresAt - now <= fiveMinutes) {
+        console.log(
+          `Token da loja ${store.shop_id} expirado/próximo de expirar. Renovando...`
+        );
+
+        const refreshed =
+          await refreshShopeeToken(store);
+
+        currentStore = {
+          ...store,
+          access_token:
+            refreshed.accessToken,
+          refresh_token:
+            refreshed.refreshToken,
+          token_expires_at:
+            refreshed.expiresAt,
+        };
+
+        console.log(
+          `Token da loja ${store.shop_id} renovado com sucesso.`
+        );
+      }
+    }
+
+    // =====================================================
+    // ASSINATURA SHOPEE
+    // =====================================================
+
     const partnerId =
       process.env.SHOPEE_PARTNER_ID!;
 
     const partnerKey =
       process.env.SHOPEE_PARTNER_KEY!;
-
-    const crypto =
-      await import("crypto");
 
     const path =
       "/api/v2/product/reply_comment";
@@ -96,7 +141,7 @@ export async function POST(request: Request) {
       Math.floor(Date.now() / 1000);
 
     const baseString =
-      `${partnerId}${path}${timestamp}${store.access_token}${store.shop_id}`;
+      `${partnerId}${path}${timestamp}${currentStore.access_token}${currentStore.shop_id}`;
 
     const sign =
       crypto
@@ -108,7 +153,7 @@ export async function POST(request: Request) {
         .digest("hex");
 
     const url = new URL(
-      `https://openplatform.sandbox.test-stable.shopee.sg${path}`
+      `${SHOPEE_HOST}${path}`
     );
 
     url.searchParams.set(
@@ -128,37 +173,40 @@ export async function POST(request: Request) {
 
     url.searchParams.set(
       "shop_id",
-      store.shop_id.toString()
+      currentStore.shop_id.toString()
     );
 
     url.searchParams.set(
       "access_token",
-      store.access_token
+      currentStore.access_token
     );
 
-    const response =
-      await fetch(
-        url.toString(),
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            comment_list: [
-              {
-                comment_id:
-                  Number(
-                    review.shopee_review_id
-                  ),
-                comment:
-                  responseText,
-              },
-            ],
-          }),
-        }
-      );
+    // =====================================================
+    // ENVIA RESPOSTA PARA SHOPEE
+    // =====================================================
+
+    const response = await fetch(
+      url.toString(),
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+        body: JSON.stringify({
+          comment_list: [
+            {
+              comment_id:
+                Number(
+                  review.shopee_review_id
+                ),
+              comment:
+                responseText,
+            },
+          ],
+        }),
+      }
+    );
 
     const data =
       await response.json();
@@ -174,7 +222,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Marca como enviada
+    // =====================================================
+    // MARCA AVALIAÇÃO COMO ENVIADA
+    // =====================================================
+
     const { error: updateError } =
       await supabaseAdmin
         .from("reviews")
@@ -200,7 +251,6 @@ export async function POST(request: Request) {
       shopeeReviewId:
         review.shopee_review_id,
     });
-
   } catch (error) {
     console.error(
       "Erro enviando resposta:",
