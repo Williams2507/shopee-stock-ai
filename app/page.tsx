@@ -28,6 +28,20 @@ type DashboardData = {
   lowStock: any[];
 };
 
+
+type Review = {
+  id: string;
+  shopee_review_id: number;
+  username: string | null;
+  rating: number;
+  comment: string | null;
+  ai_response: string | null;
+  edited_response: string | null;
+  response_status: string;
+  response_error: string | null;
+  review_time: string | null;
+};
+
 export default function Home() {
   const [data, setData] =
     useState<DashboardData | null>(null);
@@ -40,6 +54,24 @@ export default function Home() {
 
   const [error, setError] =
     useState("");
+
+  const [activeTab, setActiveTab] =
+    useState<"dashboard" | "reviews">("dashboard");
+
+  const [reviews, setReviews] =
+    useState<Review[]>([]);
+
+  const [reviewsLoading, setReviewsLoading] =
+    useState(false);
+
+  const [reviewsMessage, setReviewsMessage] =
+    useState("");
+
+  const [editingReview, setEditingReview] =
+    useState<string | null>(null);
+
+  const [sendingReview, setSendingReview] =
+    useState<string | null>(null);
 
   async function loadDashboard(
     selectedPeriod = period
@@ -80,6 +112,213 @@ export default function Home() {
   useEffect(() => {
     loadDashboard(period);
   }, [period]);
+
+
+  async function loadReviews() {
+    try {
+      setReviewsLoading(true);
+      setReviewsMessage("");
+
+      const response = await fetch(
+        "/api/reviews",
+        {
+          cache: "no-store",
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.error ||
+            "Erro ao carregar avaliações."
+        );
+      }
+
+      setReviews(result.reviews || []);
+    } catch (error) {
+      setReviewsMessage(
+        error instanceof Error
+          ? error.message
+          : "Erro ao carregar avaliações."
+      );
+    } finally {
+      setReviewsLoading(false);
+    }
+  }
+
+  async function syncReviews() {
+    try {
+      setReviewsLoading(true);
+      setReviewsMessage("Sincronizando avaliações...");
+
+      const response = await fetch(
+        "/api/shopee/reviews",
+        {
+          cache: "no-store",
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.error ||
+            "Erro ao sincronizar avaliações."
+        );
+      }
+
+      await loadReviews();
+
+      setReviewsMessage(
+        `${result.savedReviews || 0} avaliação(ões) sincronizada(s).`
+      );
+    } catch (error) {
+      setReviewsMessage(
+        error instanceof Error
+          ? error.message
+          : "Erro ao sincronizar avaliações."
+      );
+      setReviewsLoading(false);
+    }
+  }
+
+  async function generateReviewResponses() {
+    try {
+      setReviewsLoading(true);
+      setReviewsMessage("Preparando respostas...");
+
+      const response = await fetch(
+        "/api/reviews/generate",
+        {
+          method: "POST",
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.error ||
+            "Erro ao preparar respostas."
+        );
+      }
+
+      await loadReviews();
+
+      setReviewsMessage(
+        `${result.generated || 0} resposta(s) preparada(s).`
+      );
+    } catch (error) {
+      setReviewsMessage(
+        error instanceof Error
+          ? error.message
+          : "Erro ao preparar respostas."
+      );
+      setReviewsLoading(false);
+    }
+  }
+
+  async function saveReviewResponse(
+    reviewId: string,
+    responseText: string
+  ) {
+    try {
+      const response = await fetch(
+        "/api/reviews/edit",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            reviewId,
+            response: responseText,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.error ||
+            "Erro ao salvar resposta."
+        );
+      }
+
+      setReviews((current) =>
+        current.map((review) =>
+          review.id === reviewId
+            ? {
+                ...review,
+                edited_response: responseText,
+              }
+            : review
+        )
+      );
+
+      setEditingReview(null);
+    } catch (error) {
+      setReviewsMessage(
+        error instanceof Error
+          ? error.message
+          : "Erro ao salvar resposta."
+      );
+    }
+  }
+
+  async function sendReview(reviewId: string) {
+    try {
+      setSendingReview(reviewId);
+      setReviewsMessage("");
+
+      const response = await fetch(
+        "/api/reviews/send",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            reviewId,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.error ||
+            "Erro ao enviar resposta."
+        );
+      }
+
+      setReviews((current) =>
+        current.map((review) =>
+          review.id === reviewId
+            ? {
+                ...review,
+                response_status: "SENT",
+              }
+            : review
+        )
+      );
+
+      setReviewsMessage(
+        "Resposta enviada para a Shopee com sucesso!"
+      );
+    } catch (error) {
+      setReviewsMessage(
+        error instanceof Error
+          ? error.message
+          : "Erro ao enviar resposta."
+      );
+    } finally {
+      setSendingReview(null);
+    }
+  }
 
   function money(value: number) {
     return new Intl.NumberFormat(
@@ -161,7 +400,52 @@ export default function Home() {
 
         </header>
 
-        {/* ESTOQUE */}
+        {/* NAVEGAÇÃO */}
+
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() =>
+              setActiveTab("dashboard")
+            }
+            className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
+              activeTab === "dashboard"
+                ? "bg-white text-black"
+                : "bg-white/5 text-zinc-400 hover:bg-white/10"
+            }`}
+          >
+            Dashboard
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab("reviews");
+              loadReviews();
+            }}
+            className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
+              activeTab === "reviews"
+                ? "bg-white text-black"
+                : "bg-white/5 text-zinc-400 hover:bg-white/10"
+            }`}
+          >
+            Avaliações
+          </button>
+        </div>
+
+        {activeTab === "reviews" ? (
+          <ReviewsSection
+            reviews={reviews}
+            loading={reviewsLoading}
+            message={reviewsMessage}
+            editingReview={editingReview}
+            sendingReview={sendingReview}
+            setEditingReview={setEditingReview}
+            onSync={syncReviews}
+            onGenerate={generateReviewResponses}
+            onSave={saveReviewResponse}
+            onSend={sendReview}
+          />
+        ) : (
+        /* ESTOQUE */
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
@@ -537,9 +821,305 @@ export default function Home() {
           </div>
 
         </section>
-
+        )}
       </div>
     </main>
+  );
+}
+
+function ReviewsSection({
+  reviews,
+  loading,
+  message,
+  editingReview,
+  sendingReview,
+  setEditingReview,
+  onSync,
+  onGenerate,
+  onSave,
+  onSend,
+}: {
+  reviews: Review[];
+  loading: boolean;
+  message: string;
+  editingReview: string | null;
+  sendingReview: string | null;
+  setEditingReview: (id: string | null) => void;
+  onSync: () => void;
+  onGenerate: () => void;
+  onSave: (
+    reviewId: string,
+    responseText: string
+  ) => void;
+  onSend: (reviewId: string) => void;
+}) {
+  const pending = reviews.filter(
+    (review) =>
+      review.response_status !== "SENT"
+  ).length;
+
+  return (
+    <section className="bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">
+      <div className="p-6 border-b border-white/5">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold">
+              Avaliações
+            </h2>
+
+            <p className="text-sm text-zinc-500 mt-1">
+              Prepare, revise e envie respostas para seus clientes.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={onSync}
+              disabled={loading}
+              className="px-4 py-2.5 rounded-xl bg-white/5 text-white text-sm font-semibold hover:bg-white/10 disabled:opacity-50"
+            >
+              {loading
+                ? "Sincronizando..."
+                : "Sincronizar"}
+            </button>
+
+            <button
+              onClick={onGenerate}
+              disabled={loading || reviews.length === 0}
+              className="px-4 py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-zinc-200 disabled:opacity-50"
+            >
+              Preparar respostas
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-4 mt-5 text-sm">
+          <div className="bg-white/[0.03] rounded-xl px-4 py-3">
+            <p className="text-zinc-500 text-xs">
+              Total
+            </p>
+            <p className="font-bold mt-1">
+              {reviews.length}
+            </p>
+          </div>
+
+          <div className="bg-white/[0.03] rounded-xl px-4 py-3">
+            <p className="text-zinc-500 text-xs">
+              Pendentes
+            </p>
+            <p className="font-bold mt-1">
+              {pending}
+            </p>
+          </div>
+        </div>
+
+        {message && (
+          <div className="mt-4 rounded-xl bg-white/[0.03] border border-white/5 px-4 py-3 text-sm text-zinc-300">
+            {message}
+          </div>
+        )}
+      </div>
+
+      <div className="p-6">
+        {reviews.length === 0 ? (
+          <div className="py-16 text-center">
+            <div className="text-4xl mb-3">
+              ⭐
+            </div>
+            <p className="font-medium">
+              Nenhuma avaliação encontrada
+            </p>
+            <p className="text-sm text-zinc-500 mt-1">
+              Clique em Sincronizar para buscar avaliações da Shopee.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {reviews.map((review) => {
+              const prepared =
+                review.edited_response ||
+                review.ai_response ||
+                "";
+
+              const isEditing =
+                editingReview === review.id;
+
+              const isSent =
+                review.response_status === "SENT";
+
+              return (
+                <ReviewCard
+                  key={review.id}
+                  review={review}
+                  prepared={prepared}
+                  isEditing={isEditing}
+                  isSent={isSent}
+                  sending={
+                    sendingReview === review.id
+                  }
+                  onEdit={() =>
+                    setEditingReview(review.id)
+                  }
+                  onCancel={() =>
+                    setEditingReview(null)
+                  }
+                  onSave={(text) =>
+                    onSave(review.id, text)
+                  }
+                  onSend={() =>
+                    onSend(review.id)
+                  }
+                />
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ReviewCard({
+  review,
+  prepared,
+  isEditing,
+  isSent,
+  sending,
+  onEdit,
+  onCancel,
+  onSave,
+  onSend,
+}: {
+  review: Review;
+  prepared: string;
+  isEditing: boolean;
+  isSent: boolean;
+  sending: boolean;
+  onEdit: () => void;
+  onCancel: () => void;
+  onSave: (text: string) => void;
+  onSend: () => void;
+}) {
+  const [text, setText] =
+    useState(prepared);
+
+  useEffect(() => {
+    setText(prepared);
+  }, [prepared]);
+
+  return (
+    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="text-lg">
+              {"★".repeat(
+                Math.max(
+                  0,
+                  Math.min(5, review.rating)
+                )
+              )}
+              <span className="text-zinc-700">
+                {"★".repeat(
+                  Math.max(
+                    0,
+                    5 - Math.min(5, review.rating)
+                  )
+                )}
+              </span>
+            </div>
+
+            <span
+              className={`text-xs px-2.5 py-1 rounded-lg font-semibold ${
+                isSent
+                  ? "bg-green-500/10 text-green-400"
+                  : "bg-yellow-500/10 text-yellow-400"
+              }`}
+            >
+              {isSent
+                ? "Enviada"
+                : "Pendente"}
+            </span>
+          </div>
+
+          <p className="font-semibold mt-3">
+            {review.username ||
+              "Cliente"}
+          </p>
+
+          <p className="text-sm text-zinc-400 mt-2 whitespace-pre-wrap">
+            {review.comment ||
+              "Cliente não deixou comentário."}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-xl bg-black/20 border border-white/5 p-4">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <p className="text-xs uppercase tracking-wide text-zinc-500">
+            Resposta preparada
+          </p>
+
+          {!isSent && prepared && !isEditing && (
+            <button
+              onClick={onEdit}
+              className="text-xs text-zinc-300 hover:text-white"
+            >
+              Editar
+            </button>
+          )}
+        </div>
+
+        {isEditing ? (
+          <>
+            <textarea
+              value={text}
+              onChange={(event) =>
+                setText(event.target.value)
+              }
+              rows={4}
+              className="w-full rounded-xl bg-[#0b0c10] border border-white/10 p-3 text-sm text-white outline-none focus:border-white/30"
+            />
+
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => onSave(text)}
+                disabled={!text.trim()}
+                className="px-4 py-2 rounded-lg bg-white text-black text-sm font-semibold disabled:opacity-50"
+              >
+                Salvar
+              </button>
+
+              <button
+                onClick={onCancel}
+                className="px-4 py-2 rounded-lg bg-white/5 text-zinc-300 text-sm font-semibold"
+              >
+                Cancelar
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-zinc-300 whitespace-pre-wrap">
+            {prepared ||
+              "Nenhuma resposta preparada ainda."}
+          </p>
+        )}
+      </div>
+
+      {!isSent && prepared && !isEditing && (
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={onSend}
+            disabled={sending}
+            className="px-5 py-2.5 rounded-xl bg-white text-black text-sm font-bold hover:bg-zinc-200 disabled:opacity-50"
+          >
+            {sending
+              ? "Enviando..."
+              : "ENVIAR PARA SHOPEE"}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
