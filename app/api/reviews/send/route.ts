@@ -216,16 +216,16 @@ if (
   data.result_list
 ) {
   console.error(
-    "ERRO SHOPEE reply_comment:",
+    "ERRO SHOPEE:",
     JSON.stringify(data, null, 2)
   );
 
-  throw new Error(
-    data.result_list
-      ? JSON.stringify(data.result_list)
-      : data.message ||
-        data.error ||
-        "Erro ao enviar resposta para a Shopee."
+  return NextResponse.json(
+    {
+      success: false,
+      shopeeResponse: data,
+    },
+    { status: 500 }
   );
 }
 
