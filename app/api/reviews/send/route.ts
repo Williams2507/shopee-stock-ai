@@ -210,24 +210,24 @@ export async function POST(request: Request) {
 
     const data =
       await response.json();
+if (
+  !response.ok ||
+  data.error ||
+  data.result_list
+) {
+  console.error(
+    "ERRO SHOPEE reply_comment:",
+    JSON.stringify(data, null, 2)
+  );
 
-    if (
-      !response.ok ||
-      data.error ||
-      data.result_list
-    ) {
-      console.error(
-        "ERRO SHOPEE reply_comment:",
-        JSON.stringify(data, null, 2)
-      );
-
-      throw new Error(
-        data.message ||
-          data.error ||
-          JSON.stringify(data.result_list) ||
-          "Erro ao enviar resposta para a Shopee."
-      );
-    }
+  throw new Error(
+    data.result_list
+      ? JSON.stringify(data.result_list)
+      : data.message ||
+        data.error ||
+        "Erro ao enviar resposta para a Shopee."
+  );
+}
 
     // =====================================================
     // MARCA AVALIAÇÃO COMO ENVIADA
