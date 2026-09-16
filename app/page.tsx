@@ -43,6 +43,18 @@ type DashboardData = {
 
   lowStock: any[];
   stockHistory?: any[];
+  executiveInsights?: {
+    revenue: number;
+    grossProfit: number;
+    orders: number;
+    units: number;
+    riskSkus: number;
+    urgentSkus: number;
+    criticalClassA: number;
+    purchaseInvestment: number;
+    excessCapital: number;
+    nextOrderDates: any[];
+  };
   purchaseCash?: {
     total: number;
     urgent: number;
@@ -856,6 +868,13 @@ export default function Home() {
 
         </section>
 
+        {/* PAINEL EXECUTIVO */}
+
+        <ExecutiveInsights
+          data={data}
+          money={money}
+        />
+
         {/* SAÚDE DO ESTOQUE */}
 
         <StockHealthSection
@@ -1303,6 +1322,174 @@ export default function Home() {
           )}
       </div>
     </main>
+  );
+}
+
+
+function ExecutiveInsights({
+  data,
+  money,
+}: {
+  data: DashboardData;
+  money: (value: number) => string;
+}) {
+  const insights = data.executiveInsights || {
+    revenue: Number(data.metrics?.revenue || 0),
+    grossProfit: Number(data.metrics?.grossProfit || 0),
+    orders: Number(data.metrics?.orders || 0),
+    units: Number(data.metrics?.units || 0),
+    riskSkus: 0,
+    urgentSkus: 0,
+    criticalClassA: 0,
+    purchaseInvestment: 0,
+    excessCapital: 0,
+    nextOrderDates: [],
+  };
+
+  const actions = [
+    insights.riskSkus > 0
+      ? `${insights.riskSkus} SKU(s) com risco de ruptura`
+      : null,
+    insights.criticalClassA > 0
+      ? `${insights.criticalClassA} produto(s) classe A exigem atenção`
+      : null,
+    insights.purchaseInvestment > 0
+      ? `${money(insights.purchaseInvestment)} sugeridos para reposição`
+      : null,
+    insights.excessCapital > 0
+      ? `${money(insights.excessCapital)} estimados em possível excesso`
+      : null,
+  ].filter(Boolean);
+
+  return (
+    <section className="bg-[#101116] border border-white/5 rounded-2xl p-6 mb-6">
+      <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold">Painel executivo</h2>
+          <p className="text-sm text-zinc-500 mt-1">
+            Resumo do período e das decisões de estoque que exigem atenção.
+          </p>
+        </div>
+
+        <span className="px-3 py-1.5 rounded-lg bg-white/5 text-xs text-zinc-400">
+          Estoque previsto com janela fixa de 30 dias
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        <PurchaseMetric title="Faturamento" value={money(insights.revenue)} />
+        <PurchaseMetric title="Lucro bruto" value={money(insights.grossProfit)} />
+        <PurchaseMetric title="Pedidos" value={String(insights.orders)} />
+        <PurchaseMetric title="Unidades" value={String(insights.units)} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
+        <div className="rounded-xl bg-red-500/[0.06] border border-red-500/10 p-4">
+          <div className="text-xs text-red-300/70">SKUs em risco</div>
+          <div className="text-2xl font-bold mt-1">{insights.riskSkus}</div>
+          <div className="text-xs text-zinc-500 mt-2">
+            Podem acabar antes da reposição chegar.
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-orange-500/[0.06] border border-orange-500/10 p-4">
+          <div className="text-xs text-orange-300/70">Classe A crítica</div>
+          <div className="text-2xl font-bold mt-1">{insights.criticalClassA}</div>
+          <div className="text-xs text-zinc-500 mt-2">
+            Itens de maior relevância com compra urgente ou alta.
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-white/[0.03] border border-white/5 p-4">
+          <div className="text-xs text-zinc-500">Caixa para reposição</div>
+          <div className="text-2xl font-bold mt-1">
+            {money(insights.purchaseInvestment)}
+          </div>
+          <div className="text-xs text-zinc-500 mt-2">
+            Baseado nos custos cadastrados.
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-white/[0.03] border border-white/5 p-4">
+          <div className="text-xs text-zinc-500">Possível capital parado</div>
+          <div className="text-2xl font-bold mt-1">
+            {money(insights.excessCapital)}
+          </div>
+          <div className="text-xs text-zinc-500 mt-2">
+            Estimativa apenas para itens com histórico.
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4">
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-5">
+          <h3 className="font-semibold">O que exige atenção</h3>
+
+          {actions.length ? (
+            <div className="space-y-2 mt-4">
+              {actions.map((action, index) => (
+                <div
+                  key={`${action}-${index}`}
+                  className="flex items-center gap-3 rounded-lg bg-white/[0.03] px-3 py-3 text-sm"
+                >
+                  <span className="w-2 h-2 rounded-full bg-white/60 shrink-0" />
+                  <span>{action}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-zinc-500 mt-4">
+              Nenhuma ação crítica identificada com os dados disponíveis.
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-5">
+          <h3 className="font-semibold">Próximos pedidos</h3>
+
+          {insights.nextOrderDates?.length ? (
+            <div className="space-y-2 mt-4">
+              {insights.nextOrderDates.map((item: any) => {
+                const variation = data.variations.find(
+                  (variationItem) => variationItem.id === item.variation_id
+                );
+                const product = data.products.find(
+                  (productItem) => productItem.id === item.product_id
+                );
+
+                return (
+                  <div
+                    key={`executive-order-${item.variation_id}`}
+                    className="flex items-center justify-between gap-4 rounded-lg bg-white/[0.03] px-3 py-3"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">
+                        {product?.name || "Produto"}
+                      </div>
+                      <div className="text-xs text-zinc-500 mt-1">
+                        {variation?.name || "Variação"} · comprar{" "}
+                        {Number(item.suggested_purchase || 0)} un.
+                        {item.abc_class ? ` · ABC ${item.abc_class}` : ""}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-xs text-zinc-500">Pedir até</div>
+                      <div className="text-sm font-semibold mt-1">
+                        {formatStockDate(item.order_by_date)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-sm text-zinc-500 mt-4">
+              Nenhum pedido previsto no momento.
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 

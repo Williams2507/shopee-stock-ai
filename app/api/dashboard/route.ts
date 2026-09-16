@@ -1030,6 +1030,55 @@ export async function GET(request: Request) {
         recentOrders,
       },
 
+      executiveInsights: {
+        revenue: Number(revenue || 0),
+        grossProfit: Number(grossProfit || 0),
+        orders: validOrders.length,
+        units: Number(unitsSold || 0),
+        riskSkus: stockIntelligence.filter(
+          (item) => item.stock_health === "RISCO_RUPTURA"
+        ).length,
+        urgentSkus: stockIntelligence.filter(
+          (item) => item.purchase_priority === "URGENTE"
+        ).length,
+        criticalClassA: stockIntelligence.filter(
+          (item) =>
+            item.abc_class === "A" &&
+            (
+              item.purchase_priority === "URGENTE" ||
+              item.purchase_priority === "ALTA"
+            )
+        ).length,
+        purchaseInvestment: Number(purchaseCashTotal.toFixed(2)),
+        excessCapital: Number(
+          stockIntelligence.reduce(
+            (total, item) =>
+              total + Number(item.excess_capital || 0),
+            0
+          ).toFixed(2)
+        ),
+        nextOrderDates: stockIntelligence
+          .filter(
+            (item) =>
+              Number(item.suggested_purchase || 0) > 0 &&
+              item.order_by_date
+          )
+          .sort((a, b) =>
+            String(a.order_by_date).localeCompare(
+              String(b.order_by_date)
+            )
+          )
+          .slice(0, 5)
+          .map((item) => ({
+            variation_id: item.id,
+            product_id: item.product_id,
+            order_by_date: item.order_by_date,
+            suggested_purchase: item.suggested_purchase,
+            abc_class: item.abc_class,
+            purchase_priority: item.purchase_priority,
+          })),
+      },
+
       purchaseCash: {
         total: Number(purchaseCashTotal.toFixed(2)),
         urgent: Number(urgentPurchaseCash.toFixed(2)),
