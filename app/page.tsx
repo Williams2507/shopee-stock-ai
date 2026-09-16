@@ -11,6 +11,7 @@ type DashboardData = {
     leadTimeDays: number;
     safetyDays: number;
     coverageTargetDays: number;
+    forecastDays?: number;
   };
 
   products: any[];
@@ -525,6 +526,43 @@ export default function Home() {
 
   const metrics = data.metrics;
 
+  const stockVariations = [...data.variations].sort((a, b) => {
+    const riskA = Boolean(a.risk_before_arrival) ? 1 : 0;
+    const riskB = Boolean(b.risk_before_arrival) ? 1 : 0;
+
+    if (riskA !== riskB) return riskB - riskA;
+
+    const purchaseA = Number(a.suggested_purchase ?? 0);
+    const purchaseB = Number(b.suggested_purchase ?? 0);
+
+    if (purchaseA !== purchaseB) return purchaseB - purchaseA;
+
+    const coverageA =
+      a.days_of_stock === null || a.days_of_stock === undefined
+        ? Number.POSITIVE_INFINITY
+        : Number(a.days_of_stock);
+    const coverageB =
+      b.days_of_stock === null || b.days_of_stock === undefined
+        ? Number.POSITIVE_INFINITY
+        : Number(b.days_of_stock);
+
+    return coverageA - coverageB;
+  });
+
+  const purchaseItems = stockVariations.filter((variation) =>
+    Number(variation.suggested_purchase ?? 0) > 0
+  );
+
+  const totalSuggestedPurchase = purchaseItems.reduce(
+    (total, variation) =>
+      total + Number(variation.suggested_purchase ?? 0),
+    0
+  );
+
+  const riskItems = stockVariations.filter((variation) =>
+    Boolean(variation.risk_before_arrival)
+  ).length;
+
   return (
     <main className="min-h-screen bg-[#08090c] text-white">
       <div className="w-full px-6 lg:px-8 py-8">
@@ -757,9 +795,9 @@ export default function Home() {
 
         {/* ESTOQUE + ALERTAS */}
 
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section className="grid grid-cols-1 xl:grid-cols-[minmax(0,3fr)_minmax(320px,1fr)] gap-6">
 
-          <div className="lg:col-span-2 bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">
+          <div className="min-w-0 bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">
 
             <div className="p-5 border-b border-white/5">
 
@@ -768,8 +806,24 @@ export default function Home() {
               </h2>
 
               <p className="text-sm text-zinc-500">
-                Produtos cadastrados no sistema
+                Previsão de compra baseada nos últimos {Number(data.stockSettings?.forecastDays ?? 30)} dias
               </p>
+
+              <div className="flex flex-wrap gap-2 mt-4">
+                <span className="inline-flex px-3 py-1.5 rounded-lg bg-white/5 text-xs text-zinc-300">
+                  {purchaseItems.length} item(ns) para comprar
+                </span>
+
+                <span className="inline-flex px-3 py-1.5 rounded-lg bg-red-500/10 text-xs font-semibold text-red-400">
+                  {totalSuggestedPurchase} un. sugeridas
+                </span>
+
+                {riskItems > 0 && (
+                  <span className="inline-flex px-3 py-1.5 rounded-lg bg-orange-500/10 text-xs font-semibold text-orange-400">
+                    {riskItems} com risco antes da chegada
+                  </span>
+                )}
+              </div>
 
               {stockMessage && (
                 <p className="text-sm text-zinc-300 mt-3">
@@ -823,9 +877,9 @@ export default function Home() {
 
                 <tbody>
 
-                  {data.variations.length ? (
+                  {stockVariations.length ? (
 
-                    data.variations.map(
+                    stockVariations.map(
                       (variation) => {
 
                         const product =
@@ -948,6 +1002,11 @@ export default function Home() {
                                   }
                                 >
                                   {coverageDays.toFixed(1)} dias
+                                  {Boolean(variation.risk_before_arrival) && (
+                                    <span className="block text-[10px] uppercase tracking-wide text-red-400 mt-1">
+                                      Risco antes da chegada
+                                    </span>
+                                  )}
                                 </span>
                               ) : (
                                 <span className="text-zinc-500">
