@@ -322,6 +322,120 @@ export async function GET(request: Request) {
     }
 
     // =========================
+    // INTELIGÊNCIA DE VENDAS
+    // =========================
+
+    const dailySalesMap = new Map<
+      string,
+      { date: string; revenue: number; orders: number; units: number }
+    >();
+
+    for (const order of validOrders) {
+      const rawDate = order.order_date;
+      if (!rawDate) continue;
+
+      const date = new Date(rawDate).toISOString().slice(0, 10);
+      const current = dailySalesMap.get(date) || {
+        date,
+        revenue: 0,
+        orders: 0,
+        units: 0,
+      };
+
+      current.revenue += Number(order.total_amount || 0);
+      current.orders += 1;
+
+      const itemsForOrder = orderItems.filter(
+        (item) => item.order_id === order.id
+      );
+
+      current.units += itemsForOrder.reduce(
+        (total, item) => total + Number(item.quantity || 0),
+        0
+      );
+
+      dailySalesMap.set(date, current);
+    }
+
+    const dailySales = Array.from(dailySalesMap.values()).sort(
+      (a, b) => a.date.localeCompare(b.date)
+    );
+
+    const topProductsMap = new Map<string, any>();
+
+    for (const item of orderItems) {
+      const product = products?.find(
+        (candidate) => candidate.id === item.product_id
+      );
+
+      const variation = item.variation_id
+        ? variations.find(
+            (candidate) => candidate.id === item.variation_id
+          )
+        : null;
+
+      const key = item.variation_id
+        ? `variation:${item.variation_id}`
+        : `product:${item.product_id || "unknown"}`;
+
+      const quantity = Number(item.quantity || 0);
+
+      // Preferimos o valor registrado no item do pedido quando existir.
+      // Caso o schema não tenha subtotal/preço do item, usamos o preço
+      // cadastrado apenas como estimativa visual do ranking.
+      const itemRevenue =
+        Number(item.subtotal || 0) ||
+        Number(item.total_price || 0) ||
+        quantity *
+          Number(
+            item.price ||
+              variation?.price ||
+              product?.price ||
+              0
+          );
+
+      const current = topProductsMap.get(key) || {
+        product_id: item.product_id || null,
+        variation_id: item.variation_id || null,
+        name: product?.name || "Produto",
+        variation_name: variation?.name || null,
+        sku: variation?.sku || product?.sku || "",
+        units: 0,
+        revenue: 0,
+      };
+
+      current.units += quantity;
+      current.revenue += itemRevenue;
+
+      topProductsMap.set(key, current);
+    }
+
+    const topProducts = Array.from(topProductsMap.values())
+      .sort((a, b) => {
+        if (b.units !== a.units) {
+          return b.units - a.units;
+        }
+
+        return b.revenue - a.revenue;
+      })
+      .slice(0, 10);
+
+    const recentOrders = validOrders.slice(0, 20).map((order) => {
+      const itemsForOrder = orderItems.filter(
+        (item) => item.order_id === order.id
+      );
+
+      return {
+        ...order,
+        units: itemsForOrder.reduce(
+          (total, item) =>
+            total + Number(item.quantity || 0),
+          0
+        ),
+      };
+    });
+
+    // =========================
     // INTELIGÊNCIA DE ESTOQUE
     // =========================
 
@@ -652,6 +766,12 @@ export async function GET(request: Request) {
         averageOrderValue,
 
         margin,
+      },
+
+      sales: {
+        daily: dailySales,
+        topProducts,
+        recentOrders,
       },
 
       lowStock,

@@ -17,6 +17,12 @@ type DashboardData = {
   products: any[];
   variations: any[];
   orderItems: any[];
+  orders?: any[];
+  sales?: {
+    daily: any[];
+    topProducts: any[];
+    recentOrders: any[];
+  };
 
   metrics: {
     products: number;
@@ -66,7 +72,7 @@ export default function Home() {
     useState("");
 
   const [activeTab, setActiveTab] =
-    useState<"dashboard" | "purchases" | "reviews">("dashboard");
+    useState<"dashboard" | "sales" | "purchases" | "reviews">("dashboard");
 
   const [reviews, setReviews] =
     useState<Review[]>([]);
@@ -615,6 +621,19 @@ export default function Home() {
 
           <button
             onClick={() =>
+              setActiveTab("sales")
+            }
+            className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
+              activeTab === "sales"
+                ? "bg-white text-black"
+                : "bg-white/5 text-zinc-400 hover:bg-white/10"
+            }`}
+          >
+            Vendas
+          </button>
+
+          <button
+            onClick={() =>
               setActiveTab("purchases")
             }
             className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
@@ -655,6 +674,13 @@ export default function Home() {
             onSend={sendReview}
             onCreateTest={createTestReview}
             onDeleteTest={deleteTestReview}
+          />
+        ) : activeTab === "sales" ? (
+          <SalesSection
+            data={data}
+            money={money}
+            period={period}
+            setPeriod={setPeriod}
           />
         ) : activeTab === "purchases" ? (
           <PurchasesSection
@@ -1245,6 +1271,216 @@ export default function Home() {
       </div>
     </main>
   );
+}
+
+
+function SalesSection({
+  data,
+  money,
+  period,
+  setPeriod,
+}: {
+  data: DashboardData;
+  money: (value: number) => string;
+  period: number;
+  setPeriod: (value: number) => void;
+}) {
+  const sales = data.sales || {
+    daily: [],
+    topProducts: [],
+    recentOrders: [],
+  };
+
+  const maxDailyRevenue = Math.max(
+    ...sales.daily.map((day: any) => Number(day.revenue || 0)),
+    1
+  );
+
+  return (
+    <section className="space-y-6">
+      <div className="bg-[#101116] border border-white/5 rounded-2xl p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+          <div>
+            <h2 className="text-xl font-semibold">Vendas</h2>
+            <p className="text-sm text-zinc-500 mt-1">
+              Pedidos e desempenho comercial no período selecionado.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {[1, 7, 30, 90].map((value) => (
+              <button
+                key={value}
+                onClick={() => setPeriod(value)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  period === value
+                    ? "bg-white text-black"
+                    : "bg-white/5 text-zinc-400 hover:bg-white/10"
+                }`}
+              >
+                {value === 1 ? "Hoje" : `${value} dias`}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 mt-6">
+          <PurchaseMetric title="Faturamento" value={money(data.metrics.revenue)} />
+          <PurchaseMetric title="Pedidos" value={data.metrics.orders.toString()} />
+          <PurchaseMetric title="Unidades vendidas" value={data.metrics.unitsSold.toString()} />
+          <PurchaseMetric title="Lucro bruto" value={money(data.metrics.grossProfit)} />
+          <PurchaseMetric title="Ticket médio" value={money(data.metrics.averageOrderValue)} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)] gap-6">
+        <div className="bg-[#101116] border border-white/5 rounded-2xl p-6">
+          <h3 className="font-semibold text-lg">Vendas por dia</h3>
+          <p className="text-sm text-zinc-500 mt-1">
+            Faturamento diário dentro do período selecionado.
+          </p>
+
+          {sales.daily.length ? (
+            <div className="mt-6 space-y-3">
+              {sales.daily.map((day: any) => {
+                const width = Math.max(
+                  2,
+                  (Number(day.revenue || 0) / maxDailyRevenue) * 100
+                );
+
+                return (
+                  <div key={day.date} className="grid grid-cols-[80px_1fr_auto] items-center gap-3">
+                    <span className="text-xs text-zinc-500">
+                      {formatStockDate(day.date)}
+                    </span>
+                    <div className="h-8 rounded-lg bg-white/[0.03] overflow-hidden">
+                      <div
+                        className="h-full rounded-lg bg-white/10"
+                        style={{ width: `${width}%` }}
+                      />
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold">{money(Number(day.revenue || 0))}</div>
+                      <div className="text-[10px] text-zinc-500">
+                        {Number(day.orders || 0)} pedido(s)
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-16 text-center text-sm text-zinc-500">
+              Nenhuma venda encontrada neste período.
+            </div>
+          )}
+        </div>
+
+        <div className="bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">
+          <div className="p-5 border-b border-white/5">
+            <h3 className="font-semibold text-lg">Mais vendidos</h3>
+            <p className="text-sm text-zinc-500 mt-1">Ranking por unidades vendidas.</p>
+          </div>
+
+          <div className="p-5">
+            {sales.topProducts.length ? (
+              <div className="space-y-3">
+                {sales.topProducts.map((item: any, index: number) => (
+                  <div
+                    key={`${item.product_id}-${item.variation_id || "product"}-${index}`}
+                    className="rounded-xl bg-white/[0.03] p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-xs text-zinc-500">#{index + 1}</div>
+                        <div className="font-medium text-sm mt-1">{item.name}</div>
+                        <div className="text-xs text-zinc-500 mt-1">{item.sku || "-"}</div>
+                      </div>
+                      <span className="text-sm font-bold">{Number(item.units || 0)} un.</span>
+                    </div>
+                    <div className="text-xs text-zinc-400 mt-3">
+                      Faturamento: {money(Number(item.revenue || 0))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-sm text-zinc-500">
+                Sem produtos vendidos no período.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">
+        <div className="p-5 border-b border-white/5">
+          <h3 className="font-semibold text-lg">Pedidos recentes</h3>
+          <p className="text-sm text-zinc-500 mt-1">
+            Últimos pedidos válidos sincronizados da Shopee.
+          </p>
+        </div>
+
+        {sales.recentOrders.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left text-xs uppercase text-zinc-500 border-b border-white/5">
+                  <th className="px-5 py-4">Pedido</th>
+                  <th className="px-5 py-4">Data</th>
+                  <th className="px-5 py-4">Status</th>
+                  <th className="px-5 py-4">Itens</th>
+                  <th className="px-5 py-4">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sales.recentOrders.map((order: any) => (
+                  <tr key={order.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                    <td className="px-5 py-4 text-sm font-medium">
+                      {order.order_sn || order.shopee_order_sn || order.id}
+                    </td>
+                    <td className="px-5 py-4 text-sm text-zinc-400 whitespace-nowrap">
+                      {formatSalesDate(order.order_date)}
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className="inline-flex px-2.5 py-1 rounded-lg bg-white/5 text-xs text-zinc-300">
+                        {order.status || "-"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-sm">
+                      {Number(order.units || 0)} un.
+                    </td>
+                    <td className="px-5 py-4 text-sm font-semibold">
+                      {money(Number(order.total_amount || 0))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="py-16 px-6 text-center text-sm text-zinc-500">
+            Nenhum pedido encontrado neste período.
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function formatSalesDate(value: string | null | undefined) {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
 }
 
 function PurchasesSection({
