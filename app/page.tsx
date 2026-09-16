@@ -21,6 +21,8 @@ type DashboardData = {
   sales?: {
     daily: any[];
     topProducts: any[];
+    topProfitProducts?: any[];
+    productAnalysis?: any[];
     recentOrders: any[];
   };
 
@@ -1288,8 +1290,24 @@ function SalesSection({
   const sales = data.sales || {
     daily: [],
     topProducts: [],
+    topProfitProducts: [],
+    productAnalysis: [],
     recentOrders: [],
   };
+
+  const productAnalysis = sales.productAnalysis || [];
+  const topProfitProducts = sales.topProfitProducts || [];
+  const bestSeller = sales.topProducts?.[0] || null;
+  const mostProfitable = topProfitProducts[0] || null;
+
+  const abcCounts = productAnalysis.reduce(
+    (acc: Record<string, number>, item: any) => {
+      const key = item.abc_class || "C";
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    },
+    { A: 0, B: 0, C: 0 }
+  );
 
   const maxDailyRevenue = Math.max(
     ...sales.daily.map((day: any) => Number(day.revenue || 0)),
@@ -1411,6 +1429,89 @@ function SalesSection({
             )}
           </div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="bg-[#101116] border border-white/5 rounded-2xl p-6">
+          <h3 className="font-semibold text-lg">Destaques dos produtos</h3>
+          <p className="text-sm text-zinc-500 mt-1">Comparação por giro e lucro no período selecionado.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
+            <div className="rounded-xl bg-white/[0.03] p-4">
+              <div className="text-xs text-zinc-500">Mais vendido</div>
+              <div className="font-semibold mt-2">{bestSeller?.name || "Sem vendas"}</div>
+              <div className="text-sm text-zinc-400 mt-1">
+                {bestSeller ? `${Number(bestSeller.units || 0)} un. · ${money(Number(bestSeller.revenue || 0))}` : "Nenhum dado no período"}
+              </div>
+            </div>
+            <div className="rounded-xl bg-white/[0.03] p-4">
+              <div className="text-xs text-zinc-500">Maior lucro bruto</div>
+              <div className="font-semibold mt-2">{mostProfitable?.name || "Sem vendas"}</div>
+              <div className="text-sm text-zinc-400 mt-1">
+                {mostProfitable ? `${money(Number(mostProfitable.profit || 0))} · ${Number(mostProfitable.margin || 0).toFixed(1)}% margem` : "Nenhum dado no período"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-[#101116] border border-white/5 rounded-2xl p-6">
+          <h3 className="font-semibold text-lg">Curva ABC</h3>
+          <p className="text-sm text-zinc-500 mt-1">Classificação pela participação acumulada no faturamento.</p>
+          <div className="grid grid-cols-3 gap-3 mt-5">
+            {(["A", "B", "C"] as const).map((abc) => (
+              <div key={abc} className="rounded-xl bg-white/[0.03] p-4 text-center">
+                <div className="text-2xl font-bold">{abcCounts[abc] || 0}</div>
+                <div className="text-xs text-zinc-500 mt-1">Classe {abc}</div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-zinc-500 mt-4">A: até 80% · B: até 95% · C: restante do faturamento acumulado.</p>
+        </div>
+      </div>
+
+      <div className="bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">
+        <div className="p-5 border-b border-white/5">
+          <h3 className="font-semibold text-lg">Análise por produto</h3>
+          <p className="text-sm text-zinc-500 mt-1">Faturamento, custo, lucro, margem, participação e curva ABC.</p>
+        </div>
+        {productAnalysis.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left text-xs uppercase text-zinc-500 border-b border-white/5">
+                  <th className="px-5 py-4">Produto</th>
+                  <th className="px-5 py-4">Unidades</th>
+                  <th className="px-5 py-4">Faturamento</th>
+                  <th className="px-5 py-4">Custo</th>
+                  <th className="px-5 py-4">Lucro</th>
+                  <th className="px-5 py-4">Margem</th>
+                  <th className="px-5 py-4">Participação</th>
+                  <th className="px-5 py-4">ABC</th>
+                </tr>
+              </thead>
+              <tbody>
+                {productAnalysis.map((item: any, index: number) => (
+                  <tr key={`${item.product_id}-${item.variation_id || "product"}-${index}`} className="border-b border-white/5 hover:bg-white/[0.02]">
+                    <td className="px-5 py-4">
+                      <div className="font-medium text-sm">{item.name}</div>
+                      <div className="text-xs text-zinc-500 mt-1">{item.variation_name || item.sku || "-"}</div>
+                    </td>
+                    <td className="px-5 py-4 text-sm font-semibold">{Number(item.units || 0)}</td>
+                    <td className="px-5 py-4 text-sm">{money(Number(item.revenue || 0))}</td>
+                    <td className="px-5 py-4 text-sm text-zinc-400">{money(Number(item.cost || 0))}</td>
+                    <td className="px-5 py-4 text-sm font-semibold">{money(Number(item.profit || 0))}</td>
+                    <td className="px-5 py-4 text-sm">{Number(item.margin || 0).toFixed(1)}%</td>
+                    <td className="px-5 py-4 text-sm">{Number(item.revenue_share || 0).toFixed(1)}%</td>
+                    <td className="px-5 py-4">
+                      <span className="inline-flex min-w-8 justify-center px-2.5 py-1 rounded-lg bg-white/5 text-xs font-bold">{item.abc_class || "C"}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="py-16 px-6 text-center text-sm text-zinc-500">Nenhum produto vendido neste período.</div>
+        )}
       </div>
 
       <div className="bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">

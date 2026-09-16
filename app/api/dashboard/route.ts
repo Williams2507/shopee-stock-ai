@@ -410,14 +410,66 @@ export async function GET(request: Request) {
       topProductsMap.set(key, current);
     }
 
-    const topProducts = Array.from(topProductsMap.values())
-      .sort((a, b) => {
-        if (b.units !== a.units) {
-          return b.units - a.units;
-        }
+    const salesProducts = Array.from(topProductsMap.values())
+      .map((item) => {
+        const variation = item.variation_id
+          ? variations.find((candidate) => candidate.id === item.variation_id)
+          : null;
+        const product = products?.find(
+          (candidate) => candidate.id === item.product_id
+        );
 
+        const unitCost = Number(variation?.cost ?? product?.cost ?? 0);
+        const cost = Number(item.units || 0) * unitCost;
+        const profit = Number(item.revenue || 0) - cost;
+        const margin =
+          Number(item.revenue || 0) > 0
+            ? (profit / Number(item.revenue || 0)) * 100
+            : 0;
+
+        return { ...item, cost, profit, margin };
+      })
+      .sort((a, b) => b.revenue - a.revenue);
+
+    const salesProductRevenue = salesProducts.reduce(
+      (total, item) => total + Number(item.revenue || 0),
+      0
+    );
+
+    let cumulativeRevenueShare = 0;
+
+    const productAnalysis = salesProducts.map((item) => {
+      const revenueShare =
+        salesProductRevenue > 0
+          ? (Number(item.revenue || 0) / salesProductRevenue) * 100
+          : 0;
+
+      cumulativeRevenueShare += revenueShare;
+
+      const abcClass =
+        cumulativeRevenueShare <= 80
+          ? "A"
+          : cumulativeRevenueShare <= 95
+            ? "B"
+            : "C";
+
+      return {
+        ...item,
+        revenue_share: Number(revenueShare.toFixed(2)),
+        cumulative_revenue_share: Number(cumulativeRevenueShare.toFixed(2)),
+        abc_class: abcClass,
+      };
+    });
+
+    const topProducts = [...productAnalysis]
+      .sort((a, b) => {
+        if (b.units !== a.units) return b.units - a.units;
         return b.revenue - a.revenue;
       })
+      .slice(0, 10);
+
+    const topProfitProducts = [...productAnalysis]
+      .sort((a, b) => b.profit - a.profit)
       .slice(0, 10);
 
     const recentOrders = validOrders.slice(0, 20).map((order) => {
@@ -771,6 +823,8 @@ export async function GET(request: Request) {
       sales: {
         daily: dailySales,
         topProducts,
+        topProfitProducts,
+        productAnalysis,
         recentOrders,
       },
 
