@@ -74,6 +74,12 @@ export default function Home() {
   const [sendingReview, setSendingReview] =
     useState<string | null>(null);
 
+  const [savingMinimum, setSavingMinimum] =
+    useState<string | null>(null);
+
+  const [stockMessage, setStockMessage] =
+    useState("");
+
   async function loadDashboard(
     selectedPeriod = period
   ) {
@@ -383,6 +389,88 @@ export default function Home() {
     }
   }
 
+  async function saveMinimumStock(
+    variationId: string,
+    minStock: number
+  ) {
+    try {
+      setSavingMinimum(variationId);
+      setStockMessage("");
+
+      const response = await fetch("/api/stock/minimum", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          variationId,
+          minStock,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.error ||
+            "Erro ao atualizar estoque mínimo."
+        );
+      }
+
+      setData((current) => {
+        if (!current) return current;
+
+        const variations = current.variations.map((variation) =>
+          variation.id === variationId
+            ? {
+                ...variation,
+                min_stock: minStock,
+              }
+            : variation
+        );
+
+        const lowStock = variations
+          .filter(
+            (variation) =>
+              Number(variation.stock || 0) <=
+              Number(variation.min_stock ?? 5)
+          )
+          .map((variation) => ({
+            ...variation,
+            min_stock: Number(variation.min_stock ?? 5),
+            restock_needed: Math.max(
+              Number(variation.min_stock ?? 5) -
+                Number(variation.stock || 0),
+              0
+            ),
+          }))
+          .sort(
+            (a, b) =>
+              Number(a.stock || 0) -
+              Number(b.stock || 0)
+          );
+
+        return {
+          ...current,
+          variations,
+          lowStock,
+        };
+      });
+
+      setStockMessage(
+        "Estoque mínimo atualizado com sucesso!"
+      );
+    } catch (error) {
+      setStockMessage(
+        error instanceof Error
+          ? error.message
+          : "Erro ao atualizar estoque mínimo."
+      );
+    } finally {
+      setSavingMinimum(null);
+    }
+  }
+
   function money(value: number) {
     return new Intl.NumberFormat(
       "pt-BR",
@@ -667,6 +755,12 @@ export default function Home() {
                 Produtos cadastrados no sistema
               </p>
 
+              {stockMessage && (
+                <p className="text-sm text-zinc-300 mt-3">
+                  {stockMessage}
+                </p>
+              )}
+
             </div>
 
             <div className="overflow-x-auto">
@@ -694,6 +788,10 @@ export default function Home() {
 
                     <th className="px-5 py-4">
                       Estoque
+                    </th>
+
+                    <th className="px-5 py-4">
+                      Mínimo
                     </th>
 
                   </tr>
@@ -765,7 +863,7 @@ export default function Home() {
 
                               <span
                                 className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                                  stock <= 5
+                                  stock <= Number(variation.min_stock ?? 5)
                                     ? "bg-red-500/10 text-red-400"
                                     : "bg-green-500/10 text-green-400"
                                 }`}
@@ -773,6 +871,23 @@ export default function Home() {
                                 {stock} un.
                               </span>
 
+                            </td>
+
+                            <td className="px-5 py-4">
+                              <MinimumStockEditor
+                                value={Number(
+                                  variation.min_stock ?? 5
+                                )}
+                                saving={
+                                  savingMinimum === variation.id
+                                }
+                                onSave={(value) =>
+                                  saveMinimumStock(
+                                    variation.id,
+                                    value
+                                  )
+                                }
+                              />
                             </td>
 
                           </tr>
@@ -784,7 +899,7 @@ export default function Home() {
 
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={6}
                         className="px-5 py-12 text-center text-zinc-500"
                       >
                         Nenhum produto cadastrado.
@@ -849,9 +964,21 @@ export default function Home() {
                           </div>
 
                           <div className="text-xs text-red-400 mt-3 font-semibold">
-                            Apenas{" "}
-                            {variation.stock}{" "}
-                            em estoque
+                            Atual: {Number(variation.stock || 0)} un.
+                          </div>
+
+                          <div className="text-xs text-zinc-400 mt-1">
+                            Mínimo: {Number(variation.min_stock ?? 5)} un.
+                          </div>
+
+                          <div className="text-xs text-red-400 mt-1 font-semibold">
+                            Repor:{" "}
+                            {Math.max(
+                              Number(variation.min_stock ?? 5) -
+                                Number(variation.stock || 0),
+                              0
+                            )}{" "}
+                            un.
                           </div>
 
                         </div>
@@ -891,6 +1018,51 @@ export default function Home() {
           )}
       </div>
     </main>
+  );
+}
+
+function MinimumStockEditor({
+  value,
+  saving,
+  onSave,
+}: {
+  value: number;
+  saving: boolean;
+  onSave: (value: number) => void;
+}) {
+  const [minimum, setMinimum] = useState(
+    value.toString()
+  );
+
+  useEffect(() => {
+    setMinimum(value.toString());
+  }, [value]);
+
+  const parsed = Number(minimum);
+  const valid =
+    Number.isInteger(parsed) && parsed >= 0;
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="number"
+        min="0"
+        step="1"
+        value={minimum}
+        onChange={(event) =>
+          setMinimum(event.target.value)
+        }
+        className="w-20 rounded-lg bg-[#0b0c10] border border-white/10 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+      />
+
+      <button
+        onClick={() => onSave(parsed)}
+        disabled={!valid || saving}
+        className="px-3 py-2 rounded-lg bg-white/5 text-xs font-semibold text-zinc-300 hover:bg-white/10 disabled:opacity-50"
+      >
+        {saving ? "..." : "Salvar"}
+      </button>
+    </div>
   );
 }
 
