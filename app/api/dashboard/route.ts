@@ -640,6 +640,68 @@ export async function GET(request: Request) {
           (entry) => entry.variation_id === variation.id
         );
 
+        const salesAnalysis =
+          productAnalysis.find(
+            (item) =>
+              item.variation_id === variation.id
+          ) ||
+          productAnalysis.find(
+            (item) =>
+              !item.variation_id &&
+              item.product_id === variation.product_id
+          ) ||
+          null;
+
+        const abcClass =
+          salesAnalysis?.abc_class || null;
+
+        const salesRevenueShare =
+          Number(
+            salesAnalysis?.revenue_share || 0
+          );
+
+        /*
+         * Prioridade operacional de compra.
+         * Não altera a quantidade sugerida:
+         * apenas organiza os itens que já precisam de atenção.
+         *
+         * Risco de ruptura tem o maior peso.
+         * Depois vêm importância ABC, urgência da data
+         * e quantidade sugerida.
+         */
+        const abcWeight =
+          abcClass === "A"
+            ? 300
+            : abcClass === "B"
+              ? 200
+              : abcClass === "C"
+                ? 100
+                : 0;
+
+        const orderUrgency =
+          orderByDate &&
+          orderByDate <=
+            new Date().toISOString().slice(0, 10)
+            ? 150
+            : 0;
+
+        const purchasePriorityScore =
+          (riskBeforeArrival ? 1000 : 0) +
+          orderUrgency +
+          abcWeight +
+          Math.min(suggestedPurchase, 99);
+
+        const purchasePriority =
+          riskBeforeArrival ||
+          orderUrgency > 0
+            ? "URGENTE"
+            : abcClass === "A" &&
+                suggestedPurchase > 0
+              ? "ALTA"
+              : suggestedPurchase > 0
+                ? "NORMAL"
+                : "SEM_COMPRA";
+
         return {
           ...variation,
 
@@ -698,6 +760,18 @@ export async function GET(request: Request) {
           order_by_date:
             orderByDate,
 
+          abc_class:
+            abcClass,
+
+          sales_revenue_share:
+            salesRevenueShare,
+
+          purchase_priority_score:
+            purchasePriorityScore,
+
+          purchase_priority:
+            purchasePriority,
+
           stock_history:
             variationHistory,
         };
@@ -715,31 +789,17 @@ export async function GET(request: Request) {
             variation.needs_attention
         )
         .sort((a, b) => {
-          /*
-           * Primeiro mostramos produtos
-           * com risco de acabar antes
-           * da reposição chegar.
-           */
-          if (
-            a.risk_before_arrival !==
-            b.risk_before_arrival
-          ) {
-            return a.risk_before_arrival
-              ? -1
-              : 1;
+          const priorityDifference =
+            Number(b.purchase_priority_score || 0) -
+            Number(a.purchase_priority_score || 0);
+
+          if (priorityDifference !== 0) {
+            return priorityDifference;
           }
 
-          /*
-           * Depois ordenamos pela maior
-           * necessidade de compra.
-           */
           return (
-            Number(
-              b.suggested_purchase || 0
-            ) -
-            Number(
-              a.suggested_purchase || 0
-            )
+            Number(b.suggested_purchase || 0) -
+            Number(a.suggested_purchase || 0)
           );
         });
 

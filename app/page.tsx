@@ -536,6 +536,11 @@ export default function Home() {
   const metrics = data.metrics;
 
   const stockVariations = [...data.variations].sort((a, b) => {
+    const priorityA = Number(a.purchase_priority_score ?? 0);
+    const priorityB = Number(b.purchase_priority_score ?? 0);
+
+    if (priorityA !== priorityB) return priorityB - priorityA;
+
     const riskA = Boolean(a.risk_before_arrival) ? 1 : 0;
     const riskB = Boolean(b.risk_before_arrival) ? 1 : 0;
 
@@ -1611,6 +1616,20 @@ function PurchasesSection({
     Boolean(variation.risk_before_arrival)
   ).length;
 
+  const prioritizedItems = [...purchaseItems].sort(
+    (a, b) =>
+      Number(b.purchase_priority_score || 0) -
+      Number(a.purchase_priority_score || 0)
+  );
+
+  const urgentItems = prioritizedItems.filter(
+    (item) => item.purchase_priority === "URGENTE"
+  );
+
+  const classAItems = prioritizedItems.filter(
+    (item) => item.abc_class === "A"
+  );
+
   return (
     <section className="space-y-6">
       <div className="bg-[#101116] border border-white/5 rounded-2xl p-6">
@@ -1633,6 +1652,112 @@ function PurchasesSection({
           <PurchaseMetric title="Custo estimado" value={money(totalEstimatedCost)} />
           <PurchaseMetric title="Risco antes da chegada" value={riskCount.toString()} danger={riskCount > 0} />
         </div>
+      </div>
+
+      <div className="bg-[#101116] border border-white/5 rounded-2xl p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h3 className="font-semibold text-lg">Prioridades de compra</h3>
+            <p className="text-sm text-zinc-500 mt-1">
+              Ordem operacional cruzando risco de ruptura, Curva ABC, prazo e quantidade sugerida.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <span className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-semibold">
+              {urgentItems.length} urgente(s)
+            </span>
+            <span className="px-3 py-1.5 rounded-lg bg-white/5 text-zinc-300 text-xs font-semibold">
+              {classAItems.length} classe A
+            </span>
+          </div>
+        </div>
+
+        {prioritizedItems.length ? (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 mt-5">
+            {prioritizedItems.slice(0, 6).map((variation) => {
+              const product = data.products.find(
+                (item) => item.id === variation.product_id
+              );
+
+              return (
+                <div
+                  key={`priority-${variation.id}`}
+                  className="rounded-xl bg-white/[0.03] border border-white/5 p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-medium text-sm">
+                        {product?.name || "Produto"}
+                      </div>
+                      <div className="text-xs text-zinc-500 mt-1">
+                        {variation.name} · {variation.sku || product?.sku || "-"}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      {variation.abc_class && (
+                        <span className="px-2 py-1 rounded-lg bg-white/5 text-xs font-bold">
+                          ABC {variation.abc_class}
+                        </span>
+                      )}
+                      <span
+                        className={`px-2 py-1 rounded-lg text-xs font-bold ${
+                          variation.purchase_priority === "URGENTE"
+                            ? "bg-red-500/10 text-red-400"
+                            : variation.purchase_priority === "ALTA"
+                              ? "bg-orange-500/10 text-orange-400"
+                              : "bg-white/5 text-zinc-300"
+                        }`}
+                      >
+                        {variation.purchase_priority === "URGENTE"
+                          ? "Urgente"
+                          : variation.purchase_priority === "ALTA"
+                            ? "Alta"
+                            : "Normal"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-xs">
+                    <div>
+                      <div className="text-zinc-500">Estoque</div>
+                      <div className="font-semibold mt-1">
+                        {Number(variation.stock || 0)} un.
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-zinc-500">Comprar</div>
+                      <div className="font-semibold mt-1">
+                        {Number(variation.suggested_purchase || 0)} un.
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-zinc-500">Cobertura</div>
+                      <div className="font-semibold mt-1">
+                        {variation.days_of_stock == null
+                          ? "Sem histórico"
+                          : `${Number(variation.days_of_stock).toFixed(1)} dias`}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-zinc-500">Pedir até</div>
+                      <div className="font-semibold mt-1">
+                        {variation.order_by_date
+                          ? formatStockDate(variation.order_by_date)
+                          : "Sem previsão"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="mt-5 py-8 text-center text-sm text-zinc-500">
+            Nenhuma compra sugerida agora.
+          </div>
+        )}
       </div>
 
       <div className="bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">
@@ -1661,7 +1786,7 @@ function PurchasesSection({
                 </tr>
               </thead>
               <tbody>
-                {purchaseItems.map((variation) => {
+                {prioritizedItems.map((variation) => {
                   const product = data.products.find(
                     (item) => item.id === variation.product_id
                   );
