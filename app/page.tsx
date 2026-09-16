@@ -299,6 +299,38 @@ export default function Home() {
     }
   }
 
+  async function deleteTestReview(reviewId: string) {
+    try {
+      setReviewsLoading(true);
+      setReviewsMessage("Excluindo avaliação de teste...");
+
+      const response = await fetch("/api/reviews/test/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewId }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Erro ao excluir avaliação de teste.");
+      }
+
+      setReviews((current) =>
+        current.filter((review) => review.id !== reviewId)
+      );
+      setReviewsMessage("Avaliação de teste excluída com sucesso!");
+    } catch (error) {
+      setReviewsMessage(
+        error instanceof Error
+          ? error.message
+          : "Erro ao excluir avaliação de teste."
+      );
+    } finally {
+      setReviewsLoading(false);
+    }
+  }
+
   async function sendReview(reviewId: string) {
     try {
       setSendingReview(reviewId);
@@ -475,6 +507,7 @@ export default function Home() {
             onSave={saveReviewResponse}
             onSend={sendReview}
             onCreateTest={createTestReview}
+            onDeleteTest={deleteTestReview}
           />
           ) : (
             <>
@@ -873,6 +906,7 @@ function ReviewsSection({
   onSave,
   onSend,
   onCreateTest,
+  onDeleteTest,
 }: {
   reviews: Review[];
   loading: boolean;
@@ -888,6 +922,7 @@ function ReviewsSection({
   ) => void;
   onSend: (reviewId: string) => void;
   onCreateTest: () => void;
+  onDeleteTest: (reviewId: string) => void;
 }) {
   const pending = reviews.filter(
     (review) =>
@@ -1013,6 +1048,9 @@ function ReviewsSection({
                   onSend={() =>
                     onSend(review.id)
                   }
+                  onDeleteTest={() =>
+                    onDeleteTest(review.id)
+                  }
                 />
               );
             })}
@@ -1033,6 +1071,7 @@ function ReviewCard({
   onCancel,
   onSave,
   onSend,
+  onDeleteTest,
 }: {
   review: Review;
   prepared: string;
@@ -1043,6 +1082,7 @@ function ReviewCard({
   onCancel: () => void;
   onSave: (text: string) => void;
   onSend: () => void;
+  onDeleteTest: () => void;
 }) {
   const [text, setText] =
     useState(prepared);
@@ -1155,6 +1195,17 @@ function ReviewCard({
           </p>
         )}
       </div>
+
+      {review.is_test && !isEditing && (
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={onDeleteTest}
+            className="px-4 py-2.5 rounded-xl bg-red-500/10 text-red-400 text-sm font-semibold hover:bg-red-500/20"
+          >
+            Excluir teste
+          </button>
+        </div>
+      )}
 
       {!isSent && prepared && !isEditing && !review.is_test && (
         <div className="flex justify-end mt-4">
