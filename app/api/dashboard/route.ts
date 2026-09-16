@@ -15,20 +15,7 @@ export async function GET(request: Request) {
       ? period
       : 30;
 
-    // =========================
-    // CONFIGURAÇÃO DE REPOSIÇÃO
-    // =========================
 
-    // Seu fornecedor demora aproximadamente
-    // 2 semanas para entregar.
-    const LEAD_TIME_DAYS = 14;
-
-    // Mantemos mais 7 dias como margem
-    // de segurança.
-    const SAFETY_DAYS = 7;
-
-    const COVERAGE_TARGET_DAYS =
-      LEAD_TIME_DAYS + SAFETY_DAYS;
 
     // =========================
     // LOJA
@@ -37,7 +24,9 @@ export async function GET(request: Request) {
     const { data: store, error: storeError } =
       await supabaseAdmin
         .from("stores")
-        .select("id, shop_id, shop_name")
+        .select(
+          "id, shop_id, shop_name, lead_time_days, safety_days"
+        )
         .eq("shop_id", 227703795)
         .single();
 
@@ -51,6 +40,20 @@ export async function GET(request: Request) {
       );
     }
 
+    // =========================
+    // CONFIGURAÇÃO DE REPOSIÇÃO
+    // =========================
+
+    const LEAD_TIME_DAYS = Number(
+      store.lead_time_days ?? 14
+    );
+
+    const SAFETY_DAYS = Number(
+      store.safety_days ?? 7
+    );
+
+    const COVERAGE_TARGET_DAYS =
+      LEAD_TIME_DAYS + SAFETY_DAYS;
     // =========================
     // PRODUTOS
     // =========================
