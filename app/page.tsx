@@ -1493,7 +1493,7 @@ function ExecutiveInsights({
     revenue: Number(data.metrics?.revenue || 0),
     grossProfit: Number(data.metrics?.grossProfit || 0),
     orders: Number(data.metrics?.orders || 0),
-    units: Number(data.metrics?.units || 0),
+    units: Number(data.metrics?.unitsSold || 0),
     riskSkus: 0,
     urgentSkus: 0,
     criticalClassA: 0,
