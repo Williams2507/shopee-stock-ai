@@ -527,7 +527,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#08090c] text-white">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="w-full px-6 lg:px-8 py-8">
 
         {/* HEADER */}
 
