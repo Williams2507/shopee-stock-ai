@@ -34,6 +34,7 @@ type DashboardData = {
   };
 
   lowStock: any[];
+  stockHistory?: any[];
 };
 
 
@@ -1316,6 +1317,8 @@ function PurchasesSection({
                   <th className="px-5 py-4">Estoque</th>
                   <th className="px-5 py-4">Venda média</th>
                   <th className="px-5 py-4">Cobertura</th>
+                  <th className="px-5 py-4">Pedir até</th>
+                  <th className="px-5 py-4">Ruptura estimada</th>
                   <th className="px-5 py-4">Comprar</th>
                   <th className="px-5 py-4">Custo estimado</th>
                 </tr>
@@ -1372,6 +1375,24 @@ function PurchasesSection({
                           <span className="text-zinc-500">Sem histórico</span>
                         )}
                       </td>
+                      <td className="px-5 py-4 text-sm whitespace-nowrap">
+                        {variation.order_by_date ? (
+                          <span className={risk ? "text-red-400 font-semibold" : "text-zinc-300"}>
+                            {formatStockDate(variation.order_by_date)}
+                          </span>
+                        ) : (
+                          <span className="text-zinc-500">Sem histórico</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 text-sm whitespace-nowrap">
+                        {variation.estimated_stockout_date ? (
+                          <span className={risk ? "text-red-400" : "text-zinc-300"}>
+                            {formatStockDate(variation.estimated_stockout_date)}
+                          </span>
+                        ) : (
+                          <span className="text-zinc-500">Sem histórico</span>
+                        )}
+                      </td>
                       <td className="px-5 py-4">
                         <span className="inline-flex px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-sm font-bold">
                           {quantity} un.
@@ -1396,7 +1417,84 @@ function PurchasesSection({
           </div>
         )}
       </div>
+
+      <StockHistorySection data={data} />
     </section>
+  );
+}
+
+function formatStockDate(value: string) {
+  const [year, month, day] = value.slice(0, 10).split("-");
+  return `${day}/${month}/${year}`;
+}
+
+function StockHistorySection({ data }: { data: DashboardData }) {
+  const withHistory = data.variations
+    .filter((variation) => Array.isArray(variation.stock_history) && variation.stock_history.length > 0)
+    .slice(0, 6);
+
+  return (
+    <div className="bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">
+      <div className="p-5 border-b border-white/5">
+        <h3 className="font-semibold text-lg">Histórico de estoque</h3>
+        <p className="text-sm text-zinc-500 mt-1">
+          Snapshots diários salvos nas sincronizações. O gráfico ganha pontos novos a cada dia.
+        </p>
+      </div>
+
+      {withHistory.length ? (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 p-5">
+          {withHistory.map((variation) => {
+            const product = data.products.find((item) => item.id === variation.product_id);
+            const history = variation.stock_history || [];
+            const values = history.map((entry: any) => Number(entry.stock || 0));
+            const max = Math.max(...values, 1);
+            const min = Math.min(...values, 0);
+            const range = Math.max(max - min, 1);
+            const points = history
+              .map((entry: any, index: number) => {
+                const x = history.length === 1 ? 50 : (index / (history.length - 1)) * 100;
+                const y = 90 - ((Number(entry.stock || 0) - min) / range) * 75;
+                return `${x},${y}`;
+              })
+              .join(" ");
+
+            return (
+              <div key={variation.id} className="rounded-xl bg-white/[0.03] border border-white/5 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-sm">{product?.name || "Produto"}</p>
+                    <p className="text-xs text-zinc-500 mt-1">{variation.name}</p>
+                  </div>
+                  <span className="text-xs text-zinc-400">{Number(variation.stock || 0)} un.</span>
+                </div>
+                <div className="h-32 mt-4">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
+                    <line x1="0" y1="90" x2="100" y2="90" stroke="currentColor" className="text-white/10" strokeWidth="1" />
+                    {history.length > 1 ? (
+                      <polyline points={points} fill="none" stroke="currentColor" className="text-white" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                    ) : (
+                      <circle cx="50" cy="50" r="2.5" fill="currentColor" className="text-white" />
+                    )}
+                  </svg>
+                </div>
+                <div className="flex justify-between text-[11px] text-zinc-600 mt-2">
+                  <span>{history[0]?.snapshot_date ? formatStockDate(history[0].snapshot_date) : "-"}</span>
+                  <span>{history.at(-1)?.snapshot_date ? formatStockDate(history.at(-1).snapshot_date) : "-"}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="py-12 px-6 text-center">
+          <p className="font-medium">Histórico começando agora</p>
+          <p className="text-sm text-zinc-500 mt-1">
+            Depois da primeira sincronização com a nova versão, o sistema começa a registrar um ponto de estoque por dia.
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
 

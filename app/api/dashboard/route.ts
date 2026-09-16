@@ -98,6 +98,33 @@ export async function GET(request: Request) {
     }
 
     // =========================
+    // HISTÓRICO DE ESTOQUE
+    // =========================
+
+    let stockHistory: any[] = [];
+
+    const variationIds = variations.map((variation) => variation.id);
+
+    if (variationIds.length > 0) {
+      const historyStartDate = new Date();
+      historyStartDate.setDate(historyStartDate.getDate() - 30);
+
+      const { data: historyData, error: historyError } =
+        await supabaseAdmin
+          .from("stock_history")
+          .select("variation_id, stock, snapshot_date, created_at")
+          .in("variation_id", variationIds)
+          .gte("snapshot_date", historyStartDate.toISOString().slice(0, 10))
+          .order("snapshot_date", { ascending: true });
+
+      if (historyError) {
+        throw historyError;
+      }
+
+      stockHistory = historyData || [];
+    }
+
+    // =========================
     // ESTOQUE
     // =========================
 
@@ -424,6 +451,29 @@ export async function GET(request: Request) {
             suggestedPurchase > 0
           );
 
+        // Datas operacionais. Só calculamos quando existe
+        // histórico real de vendas; sem histórico, não inventamos demanda.
+        let estimatedStockoutDate: string | null = null;
+        let orderByDate: string | null = null;
+
+        if (hasSalesHistory && daysOfStock !== null) {
+          const stockout = new Date();
+          stockout.setDate(stockout.getDate() + Math.ceil(daysOfStock));
+          estimatedStockoutDate = stockout.toISOString().slice(0, 10);
+
+          const daysUntilOrder = Math.max(
+            Math.floor(daysOfStock - COVERAGE_TARGET_DAYS),
+            0
+          );
+          const orderDate = new Date();
+          orderDate.setDate(orderDate.getDate() + daysUntilOrder);
+          orderByDate = orderDate.toISOString().slice(0, 10);
+        }
+
+        const variationHistory = stockHistory.filter(
+          (entry) => entry.variation_id === variation.id
+        );
+
         return {
           ...variation,
 
@@ -475,6 +525,15 @@ export async function GET(request: Request) {
 
           needs_attention:
             needsAttention,
+
+          estimated_stockout_date:
+            estimatedStockoutDate,
+
+          order_by_date:
+            orderByDate,
+
+          stock_history:
+            variationHistory,
         };
       }
     );
@@ -596,6 +655,8 @@ export async function GET(request: Request) {
       },
 
       lowStock,
+
+      stockHistory,
 
       products:
         products || [],
