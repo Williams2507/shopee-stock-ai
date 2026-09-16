@@ -40,6 +40,7 @@ type Review = {
   response_status: string;
   response_error: string | null;
   review_time: string | null;
+  is_test: boolean;
 };
 
 export default function Home() {
@@ -179,6 +180,36 @@ export default function Home() {
           ? error.message
           : "Erro ao sincronizar avaliações."
       );
+      setReviewsLoading(false);
+    }
+  }
+
+  async function createTestReview() {
+    try {
+      setReviewsLoading(true);
+      setReviewsMessage("Criando avaliação de teste...");
+
+      const response = await fetch("/api/reviews/test", {
+        method: "POST",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.error || "Erro ao criar avaliação de teste."
+        );
+      }
+
+      await loadReviews();
+      setReviewsMessage("Avaliação de teste criada com sucesso!");
+    } catch (error) {
+      setReviewsMessage(
+        error instanceof Error
+          ? error.message
+          : "Erro ao criar avaliação de teste."
+      );
+    } finally {
       setReviewsLoading(false);
     }
   }
@@ -443,6 +474,7 @@ export default function Home() {
             onGenerate={generateReviewResponses}
             onSave={saveReviewResponse}
             onSend={sendReview}
+            onCreateTest={createTestReview}
           />
           ) : (
             <>
@@ -840,6 +872,7 @@ function ReviewsSection({
   onGenerate,
   onSave,
   onSend,
+  onCreateTest,
 }: {
   reviews: Review[];
   loading: boolean;
@@ -854,6 +887,7 @@ function ReviewsSection({
     responseText: string
   ) => void;
   onSend: (reviewId: string) => void;
+  onCreateTest: () => void;
 }) {
   const pending = reviews.filter(
     (review) =>
@@ -875,6 +909,14 @@ function ReviewsSection({
           </div>
 
           <div className="flex flex-wrap gap-2">
+            <button
+              onClick={onCreateTest}
+              disabled={loading}
+              className="px-4 py-2.5 rounded-xl bg-yellow-500/10 text-yellow-400 text-sm font-semibold hover:bg-yellow-500/20 disabled:opacity-50"
+            >
+              🧪 Criar avaliação teste
+            </button>
+
             <button
               onClick={onSync}
               disabled={loading}
@@ -1042,6 +1084,12 @@ function ReviewCard({
                 ? "Enviada"
                 : "Pendente"}
             </span>
+
+            {review.is_test && (
+              <span className="text-xs px-2.5 py-1 rounded-lg font-semibold bg-orange-500/10 text-orange-400">
+                TESTE
+              </span>
+            )}
           </div>
 
           <p className="font-semibold mt-3">
@@ -1108,7 +1156,7 @@ function ReviewCard({
         )}
       </div>
 
-      {!isSent && prepared && !isEditing && (
+      {!isSent && prepared && !isEditing && !review.is_test && (
         <div className="flex justify-end mt-4">
           <button
             onClick={onSend}
