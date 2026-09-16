@@ -65,7 +65,7 @@ export default function Home() {
     useState("");
 
   const [activeTab, setActiveTab] =
-    useState<"dashboard" | "reviews">("dashboard");
+    useState<"dashboard" | "purchases" | "reviews">("dashboard");
 
   const [reviews, setReviews] =
     useState<Review[]>([]);
@@ -613,6 +613,19 @@ export default function Home() {
           </button>
 
           <button
+            onClick={() =>
+              setActiveTab("purchases")
+            }
+            className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
+              activeTab === "purchases"
+                ? "bg-white text-black"
+                : "bg-white/5 text-zinc-400 hover:bg-white/10"
+            }`}
+          >
+            Compras / Reposição
+          </button>
+
+          <button
             onClick={() => {
               setActiveTab("reviews");
               loadReviews();
@@ -641,6 +654,12 @@ export default function Home() {
             onSend={sendReview}
             onCreateTest={createTestReview}
             onDeleteTest={deleteTestReview}
+          />
+        ) : activeTab === "purchases" ? (
+          <PurchasesSection
+            data={data}
+            purchaseItems={purchaseItems}
+            money={money}
           />
           ) : (
             <>
@@ -1224,6 +1243,179 @@ export default function Home() {
           )}
       </div>
     </main>
+  );
+}
+
+function PurchasesSection({
+  data,
+  purchaseItems,
+  money,
+}: {
+  data: DashboardData;
+  purchaseItems: any[];
+  money: (value: number) => string;
+}) {
+  const totalUnits = purchaseItems.reduce(
+    (total, variation) =>
+      total + Number(variation.suggested_purchase ?? 0),
+    0
+  );
+
+  const totalEstimatedCost = purchaseItems.reduce(
+    (total, variation) =>
+      total +
+      Number(variation.suggested_purchase ?? 0) *
+        Number(variation.cost ?? 0),
+    0
+  );
+
+  const riskCount = purchaseItems.filter((variation) =>
+    Boolean(variation.risk_before_arrival)
+  ).length;
+
+  return (
+    <section className="space-y-6">
+      <div className="bg-[#101116] border border-white/5 rounded-2xl p-6">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+          <div>
+            <h2 className="text-xl font-semibold">Compras / Reposição</h2>
+            <p className="text-sm text-zinc-500 mt-1">
+              Lista de compra calculada com estoque atual, mínimo e previsão dos últimos {Number(data.stockSettings?.forecastDays ?? 30)} dias.
+            </p>
+          </div>
+
+          <div className="text-xs text-zinc-500 lg:text-right">
+            Cobertura planejada: {Number(data.stockSettings?.coverageTargetDays ?? 0)} dias
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-6">
+          <PurchaseMetric title="Itens para comprar" value={purchaseItems.length.toString()} />
+          <PurchaseMetric title="Unidades sugeridas" value={`${totalUnits} un.`} />
+          <PurchaseMetric title="Custo estimado" value={money(totalEstimatedCost)} />
+          <PurchaseMetric title="Risco antes da chegada" value={riskCount.toString()} danger={riskCount > 0} />
+        </div>
+      </div>
+
+      <div className="bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">
+        <div className="p-5 border-b border-white/5">
+          <h3 className="font-semibold text-lg">Lista de reposição</h3>
+          <p className="text-sm text-zinc-500 mt-1">
+            Prioridade automática: risco de ruptura primeiro e, depois, maior quantidade sugerida.
+          </p>
+        </div>
+
+        {purchaseItems.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left text-xs uppercase text-zinc-500 border-b border-white/5">
+                  <th className="px-5 py-4">Prioridade</th>
+                  <th className="px-5 py-4">Produto</th>
+                  <th className="px-5 py-4">SKU</th>
+                  <th className="px-5 py-4">Estoque</th>
+                  <th className="px-5 py-4">Venda média</th>
+                  <th className="px-5 py-4">Cobertura</th>
+                  <th className="px-5 py-4">Comprar</th>
+                  <th className="px-5 py-4">Custo estimado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {purchaseItems.map((variation) => {
+                  const product = data.products.find(
+                    (item) => item.id === variation.product_id
+                  );
+                  const quantity = Number(variation.suggested_purchase ?? 0);
+                  const stock = Number(variation.stock ?? 0);
+                  const average = Number(variation.average_daily_sales ?? 0);
+                  const coverage =
+                    variation.days_of_stock === null ||
+                    variation.days_of_stock === undefined
+                      ? null
+                      : Number(variation.days_of_stock);
+                  const risk = Boolean(variation.risk_before_arrival);
+                  const estimatedCost = quantity * Number(variation.cost ?? 0);
+
+                  return (
+                    <tr
+                      key={variation.id}
+                      className="border-b border-white/5 hover:bg-white/[0.02]"
+                    >
+                      <td className="px-5 py-4">
+                        {risk ? (
+                          <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400">
+                            Urgente
+                          </span>
+                        ) : (
+                          <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold bg-yellow-500/10 text-yellow-400">
+                            Repor
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="font-medium">{product?.name || "Produto"}</div>
+                        <div className="text-xs text-zinc-500 mt-1">{variation.name}</div>
+                      </td>
+                      <td className="px-5 py-4 text-sm text-zinc-400">
+                        {variation.sku || product?.sku || "-"}
+                      </td>
+                      <td className="px-5 py-4 text-sm">{stock} un.</td>
+                      <td className="px-5 py-4 text-sm text-zinc-300">
+                        {average > 0 ? `${average.toFixed(2)} un./dia` : "Sem histórico"}
+                      </td>
+                      <td className="px-5 py-4 text-sm">
+                        {average > 0 && coverage !== null ? (
+                          <span className={risk ? "text-red-400 font-semibold" : "text-zinc-300"}>
+                            {coverage.toFixed(1)} dias
+                          </span>
+                        ) : (
+                          <span className="text-zinc-500">Sem histórico</span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="inline-flex px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-sm font-bold">
+                          {quantity} un.
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-sm font-semibold">
+                        {money(estimatedCost)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="py-16 px-6 text-center">
+            <div className="text-3xl mb-3">✓</div>
+            <p className="font-medium">Nenhuma compra necessária agora</p>
+            <p className="text-sm text-zinc-500 mt-1">
+              O estoque atual atende aos parâmetros de reposição configurados.
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function PurchaseMetric({
+  title,
+  value,
+  danger = false,
+}: {
+  title: string;
+  value: string;
+  danger?: boolean;
+}) {
+  return (
+    <div className="bg-white/[0.03] rounded-xl p-4">
+      <p className="text-xs text-zinc-500">{title}</p>
+      <p className={`text-xl font-bold mt-2 ${danger ? "text-red-400" : "text-white"}`}>
+        {value}
+      </p>
+    </div>
   );
 }
 
