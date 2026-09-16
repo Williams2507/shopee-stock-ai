@@ -50,6 +50,7 @@ type DashboardData = {
     normal: number;
     missingCostItems: number;
     itemCount: number;
+    totalUnits?: number;
   };
   stockHealth?: {
     risk: number;
@@ -1778,6 +1779,11 @@ function PurchasesSection({
   purchaseItems: any[];
   money: (value: number) => string;
 }) {
+  const [purchaseOrderFilter, setPurchaseOrderFilter] = useState<
+    "ALL" | "URGENT" | "A"
+  >("ALL");
+  const [purchaseOrderCopied, setPurchaseOrderCopied] = useState(false);
+
   const totalUnits = purchaseItems.reduce(
     (total, variation) =>
       total + Number(variation.suggested_purchase ?? 0),
@@ -1817,7 +1823,77 @@ function PurchasesSection({
     normal: 0,
     missingCostItems: 0,
     itemCount: 0,
+    totalUnits: 0,
   };
+
+
+  const purchaseOrderItems = prioritizedItems.filter((item) => {
+    if (Number(item.suggested_purchase || 0) <= 0) return false;
+    if (purchaseOrderFilter === "URGENT") {
+      return item.purchase_priority === "URGENTE";
+    }
+    if (purchaseOrderFilter === "A") {
+      return item.abc_class === "A";
+    }
+    return true;
+  });
+
+  const purchaseOrderUnits = purchaseOrderItems.reduce(
+    (total, item) => total + Number(item.suggested_purchase || 0),
+    0
+  );
+
+  const purchaseOrderValue = purchaseOrderItems.reduce(
+    (total, item) => total + Number(item.purchase_investment || 0),
+    0
+  );
+
+  const purchaseOrderMissingCost = purchaseOrderItems.filter(
+    (item) => !item.has_purchase_cost
+  ).length;
+
+  async function copyPurchaseOrder() {
+    const lines = purchaseOrderItems.map((variation, index) => {
+      const product = data.products.find(
+        (item) => item.id === variation.product_id
+      );
+      const unitCost = Number(variation.purchase_unit_cost || 0);
+      const investment = Number(variation.purchase_investment || 0);
+      const costText = variation.has_purchase_cost
+        ? `${money(unitCost)} | Subtotal: ${money(investment)}`
+        : "Custo não informado";
+
+      return `${index + 1}. ${product?.name || "Produto"} - ${variation.name}
+SKU: ${variation.sku || product?.sku || "-"}
+Quantidade: ${Number(variation.suggested_purchase || 0)} un.
+${costText}
+Prioridade: ${
+        variation.purchase_priority === "URGENTE"
+          ? "Urgente"
+          : variation.purchase_priority === "ALTA"
+            ? "Alta"
+            : "Normal"
+      }${variation.abc_class ? ` | ABC: ${variation.abc_class}` : ""}
+Pedir até: ${variation.order_by_date || "Sem previsão"}`;
+    });
+
+    const text = `PEDIDO DE COMPRA
+
+Itens: ${purchaseOrderItems.length}
+Unidades: ${purchaseOrderUnits}
+Valor estimado: ${money(purchaseOrderValue)}
+Itens sem custo: ${purchaseOrderMissingCost}
+
+${lines.join("\\n\\n")}`;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setPurchaseOrderCopied(true);
+      window.setTimeout(() => setPurchaseOrderCopied(false), 2000);
+    } catch {
+      setPurchaseOrderCopied(false);
+    }
+  }
 
   return (
     <section className="space-y-6">
@@ -1964,6 +2040,147 @@ function PurchasesSection({
           <PurchaseMetric title="Custo estimado" value={money(totalEstimatedCost)} />
           <PurchaseMetric title="Risco antes da chegada" value={riskCount.toString()} danger={riskCount > 0} />
         </div>
+      </div>
+
+      <div className="bg-[#101116] border border-white/5 rounded-2xl p-6">
+        <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-5">
+          <div>
+            <h3 className="font-semibold text-lg">Sugestão de pedido de compra</h3>
+            <p className="text-sm text-zinc-500 mt-1">
+              Lista pronta com os SKUs que a inteligência de reposição recomenda comprar.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {[
+              ["ALL", "Todos"],
+              ["URGENT", "Urgentes"],
+              ["A", "Classe A"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() =>
+                  setPurchaseOrderFilter(value as "ALL" | "URGENT" | "A")
+                }
+                className={`px-3 py-2 rounded-lg text-xs font-semibold transition ${
+                  purchaseOrderFilter === value
+                    ? "bg-white text-black"
+                    : "bg-white/5 text-zinc-400 hover:text-white"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={copyPurchaseOrder}
+              disabled={purchaseOrderItems.length === 0}
+              className="px-3 py-2 rounded-lg bg-white/10 text-white text-xs font-semibold disabled:opacity-40"
+            >
+              {purchaseOrderCopied ? "Pedido copiado" : "Copiar pedido"}
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
+          <PurchaseMetric title="Itens" value={String(purchaseOrderItems.length)} />
+          <PurchaseMetric title="Unidades" value={String(purchaseOrderUnits)} />
+          <PurchaseMetric title="Valor estimado" value={money(purchaseOrderValue)} />
+          <PurchaseMetric
+            title="Sem custo"
+            value={String(purchaseOrderMissingCost)}
+          />
+        </div>
+
+        {purchaseOrderItems.length > 0 ? (
+          <div className="mt-6 overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left text-xs uppercase text-zinc-500 border-b border-white/5">
+                  <th className="py-3 pr-4">Produto / SKU</th>
+                  <th className="py-3 pr-4">ABC</th>
+                  <th className="py-3 pr-4">Prioridade</th>
+                  <th className="py-3 pr-4">Qtd.</th>
+                  <th className="py-3 pr-4">Custo unit.</th>
+                  <th className="py-3 pr-4">Subtotal</th>
+                  <th className="py-3">Pedir até</th>
+                </tr>
+              </thead>
+              <tbody>
+                {purchaseOrderItems.map((variation) => {
+                  const product = data.products.find(
+                    (item) => item.id === variation.product_id
+                  );
+                  const hasCost = Boolean(variation.has_purchase_cost);
+
+                  return (
+                    <tr
+                      key={`order-${variation.id}`}
+                      className="border-b border-white/5"
+                    >
+                      <td className="py-4 pr-4">
+                        <div className="text-sm font-medium">
+                          {product?.name || "Produto"}
+                        </div>
+                        <div className="text-xs text-zinc-500 mt-1">
+                          {variation.name} · {variation.sku || product?.sku || "-"}
+                        </div>
+                      </td>
+                      <td className="py-4 pr-4 text-sm font-bold">
+                        {variation.abc_class || "-"}
+                      </td>
+                      <td className="py-4 pr-4">
+                        <span
+                          className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                            variation.purchase_priority === "URGENTE"
+                              ? "bg-red-500/10 text-red-400"
+                              : variation.purchase_priority === "ALTA"
+                                ? "bg-orange-500/10 text-orange-400"
+                                : "bg-white/5 text-zinc-300"
+                          }`}
+                        >
+                          {variation.purchase_priority === "URGENTE"
+                            ? "Urgente"
+                            : variation.purchase_priority === "ALTA"
+                              ? "Alta"
+                              : "Normal"}
+                        </span>
+                      </td>
+                      <td className="py-4 pr-4 text-sm font-semibold">
+                        {Number(variation.suggested_purchase || 0)}
+                      </td>
+                      <td className="py-4 pr-4 text-sm">
+                        {hasCost
+                          ? money(Number(variation.purchase_unit_cost || 0))
+                          : <span className="text-orange-400">Não informado</span>}
+                      </td>
+                      <td className="py-4 pr-4 text-sm font-semibold">
+                        {hasCost
+                          ? money(Number(variation.purchase_investment || 0))
+                          : <span className="text-orange-400">Não informado</span>}
+                      </td>
+                      <td className="py-4 text-sm">
+                        {variation.order_by_date
+                          ? formatStockDate(variation.order_by_date)
+                          : "Sem previsão"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="py-10 text-center text-sm text-zinc-500">
+            Nenhum SKU encontrado para este filtro.
+          </div>
+        )}
+
+        <p className="text-xs text-zinc-600 mt-4">
+          A sugestão apenas prepara a lista. Nenhuma compra ou mensagem é enviada automaticamente.
+        </p>
       </div>
 
       <div className="bg-[#101116] border border-white/5 rounded-2xl p-6">

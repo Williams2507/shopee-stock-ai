@@ -1037,6 +1037,11 @@ export async function GET(request: Request) {
         normal: Number(normalPurchaseCash.toFixed(2)),
         missingCostItems,
         itemCount: purchaseCashItems.length,
+        totalUnits: purchaseCashItems.reduce(
+          (total, item) =>
+            total + Number(item.suggested_purchase || 0),
+          0
+        ),
       },
 
       stockHealth: {
