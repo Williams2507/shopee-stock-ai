@@ -227,7 +227,53 @@ if (
   !response.ok ||
   data.error ||
   data.result_list
-) {
+) {const resultList =
+  data.response?.result_list ||
+  data.result_list ||
+  [];
+
+const failedResult = resultList.find(
+  (result: {
+    fail_error?: string;
+    fail_message?: string;
+  }) => result.fail_error
+);
+
+if (!response.ok || data.error || failedResult) {
+  const shopeeError =
+    failedResult?.fail_message ||
+    data.message ||
+    data.error ||
+    "A Shopee recusou o envio da resposta.";
+
+  const errorCode =
+    failedResult?.fail_error ||
+    data.error ||
+    "unknown_error";
+
+  console.error(
+    "ERRO SHOPEE:",
+    JSON.stringify(data, null, 2)
+  );
+
+  await supabaseAdmin
+    .from("reviews")
+    .update({
+      response_status: "PENDING",
+      response_error: `${errorCode}: ${shopeeError}`,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", review.id);
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: shopeeError,
+      errorCode,
+    },
+    { status: 400 }
+  );
+}
   console.error(
     "ERRO SHOPEE:",
     JSON.stringify(data, null, 2)
