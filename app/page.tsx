@@ -9,6 +9,7 @@ type DashboardData = {
 
   products: any[];
   variations: any[];
+  orderItems: any[];
 
   metrics: {
     products: number;
@@ -948,39 +949,125 @@ export default function Home() {
                             variation.product_id
                         );
 
+                      const currentStock = Number(variation.stock || 0);
+                      const minimumStock = Number(variation.min_stock ?? 5);
+                      const leadTimeDays = 14;
+                      const safetyDays = 7;
+
+                      const soldUnits = (data.orderItems || [])
+                        .filter(
+                          (item) => item.variation_id === variation.id
+                        )
+                        .reduce(
+                          (total, item) =>
+                            total + Number(item.quantity || 0),
+                          0
+                        );
+
+                      const averageDailySales =
+                        soldUnits > 0
+                          ? soldUnits / Math.max(data.period, 1)
+                          : 0;
+
+                      const coverageDays =
+                        averageDailySales > 0
+                          ? currentStock / averageDailySales
+                          : null;
+
+                      const recommendedBySales =
+                        averageDailySales > 0
+                          ? Math.ceil(
+                              averageDailySales *
+                                (leadTimeDays + safetyDays)
+                            )
+                          : 0;
+
+                      const recommendedStock = Math.max(
+                        minimumStock,
+                        recommendedBySales
+                      );
+
+                      const restockSuggestion = Math.max(
+                        recommendedStock - currentStock,
+                        0
+                      );
+
+                      const mayRunOutBeforeArrival =
+                        coverageDays !== null &&
+                        coverageDays < leadTimeDays;
+
                       return (
                         <div
                           key={variation.id}
                           className="p-4 rounded-xl bg-red-500/5 border border-red-500/10"
                         >
-
                           <div className="font-medium text-sm">
-                            {product?.name ||
-                              "Produto"}
+                            {product?.name || "Produto"}
                           </div>
 
                           <div className="text-xs text-zinc-500 mt-1">
                             {variation.name}
                           </div>
 
-                          <div className="text-xs text-red-400 mt-3 font-semibold">
-                            Atual: {Number(variation.stock || 0)} un.
+                          <div className="mt-3 space-y-1">
+                            <div className="text-xs text-red-400 font-semibold">
+                              Estoque atual: {currentStock} un.
+                            </div>
+
+                            <div className="text-xs text-zinc-400">
+                              Mínimo manual: {minimumStock} un.
+                            </div>
+                          </div>
+
+                          <div className="my-3 border-t border-white/5" />
+
+                          {averageDailySales > 0 ? (
+                            <>
+                              <div className="text-xs text-zinc-300">
+                                Venda média: {averageDailySales.toFixed(2)} un./dia
+                              </div>
+
+                              <div className="text-xs text-zinc-400 mt-1">
+                                Cobertura: {coverageDays?.toFixed(1)} dias
+                              </div>
+
+                              {mayRunOutBeforeArrival && (
+                                <div className="text-xs text-red-400 font-semibold mt-2">
+                                  ⚠ Pode acabar antes da reposição chegar
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <div className="text-xs text-zinc-400">
+                                Venda média: sem histórico
+                              </div>
+
+                              <div className="text-xs text-zinc-500 mt-1">
+                                Cobertura: sem histórico
+                              </div>
+                            </>
+                          )}
+
+                          <div className="my-3 border-t border-white/5" />
+
+                          <div className="text-xs text-zinc-400">
+                            Prazo de reposição: {leadTimeDays} dias
                           </div>
 
                           <div className="text-xs text-zinc-400 mt-1">
-                            Mínimo: {Number(variation.min_stock ?? 5)} un.
+                            Margem de segurança: {safetyDays} dias
                           </div>
 
-                          <div className="text-xs text-red-400 mt-1 font-semibold">
-                            Repor:{" "}
-                            {Math.max(
-                              Number(variation.min_stock ?? 5) -
-                                Number(variation.stock || 0),
-                              0
-                            )}{" "}
-                            un.
-                          </div>
+                          {averageDailySales > 0 && (
+                            <div className="text-xs text-zinc-300 mt-1">
+                              Estoque recomendado: {recommendedStock} un.
+                            </div>
+                          )}
 
+                          <div className="text-xs text-red-400 mt-2 font-semibold">
+                            Sugestão de compra: {restockSuggestion} un.
+                          </div>
                         </div>
                       );
                     }
