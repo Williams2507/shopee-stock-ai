@@ -7,6 +7,12 @@ type DashboardData = {
 
   period: number;
 
+  stockSettings: {
+    leadTimeDays: number;
+    safetyDays: number;
+    coverageTargetDays: number;
+  };
+
   products: any[];
   variations: any[];
   orderItems: any[];
@@ -80,6 +86,9 @@ export default function Home() {
 
   const [stockMessage, setStockMessage] =
     useState("");
+
+  const [savingStockSettings, setSavingStockSettings] =
+    useState(false);
 
   async function loadDashboard(
     selectedPeriod = period
@@ -472,6 +481,41 @@ export default function Home() {
     }
   }
 
+  async function saveStockSettings(
+    leadTimeDays: number,
+    safetyDays: number
+  ) {
+    try {
+      setSavingStockSettings(true);
+      setStockMessage("");
+
+      const response = await fetch("/api/stock/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadTimeDays, safetyDays }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.error || "Erro ao atualizar configurações de reposição."
+        );
+      }
+
+      await loadDashboard(period);
+      setStockMessage("Configurações de reposição atualizadas com sucesso!");
+    } catch (error) {
+      setStockMessage(
+        error instanceof Error
+          ? error.message
+          : "Erro ao atualizar configurações de reposição."
+      );
+    } finally {
+      setSavingStockSettings(false);
+    }
+  }
+
   function money(value: number) {
     return new Intl.NumberFormat(
       "pt-BR",
@@ -740,6 +784,15 @@ export default function Home() {
 
         </section>
 
+        {/* CONFIGURAÇÃO DE REPOSIÇÃO */}
+
+        <StockSettingsCard
+          leadTimeDays={Number(data.stockSettings?.leadTimeDays ?? 14)}
+          safetyDays={Number(data.stockSettings?.safetyDays ?? 7)}
+          saving={savingStockSettings}
+          onSave={saveStockSettings}
+        />
+
         {/* ESTOQUE + ALERTAS */}
 
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -951,50 +1004,33 @@ export default function Home() {
 
                       const currentStock = Number(variation.stock || 0);
                       const minimumStock = Number(variation.min_stock ?? 5);
-                      const leadTimeDays = 14;
-                      const safetyDays = 7;
-
-                      const soldUnits = (data.orderItems || [])
-                        .filter(
-                          (item) => item.variation_id === variation.id
-                        )
-                        .reduce(
-                          (total, item) =>
-                            total + Number(item.quantity || 0),
-                          0
-                        );
-
-                      const averageDailySales =
-                        soldUnits > 0
-                          ? soldUnits / Math.max(data.period, 1)
-                          : 0;
-
+                      const leadTimeDays = Number(
+                        variation.lead_time_days ??
+                          data.stockSettings?.leadTimeDays ??
+                          14
+                      );
+                      const safetyDays = Number(
+                        variation.safety_days ??
+                          data.stockSettings?.safetyDays ??
+                          7
+                      );
+                      const averageDailySales = Number(
+                        variation.average_daily_sales || 0
+                      );
                       const coverageDays =
-                        averageDailySales > 0
-                          ? currentStock / averageDailySales
-                          : null;
-
-                      const recommendedBySales =
-                        averageDailySales > 0
-                          ? Math.ceil(
-                              averageDailySales *
-                                (leadTimeDays + safetyDays)
-                            )
-                          : 0;
-
-                      const recommendedStock = Math.max(
-                        minimumStock,
-                        recommendedBySales
+                        variation.days_of_stock === null ||
+                        variation.days_of_stock === undefined
+                          ? null
+                          : Number(variation.days_of_stock);
+                      const recommendedStock = Number(
+                        variation.recommended_stock ?? minimumStock
                       );
-
-                      const restockSuggestion = Math.max(
-                        recommendedStock - currentStock,
-                        0
+                      const restockSuggestion = Number(
+                        variation.suggested_purchase ??
+                          Math.max(recommendedStock - currentStock, 0)
                       );
-
                       const mayRunOutBeforeArrival =
-                        coverageDays !== null &&
-                        coverageDays < leadTimeDays;
+                        Boolean(variation.risk_before_arrival);
 
                       return (
                         <div
@@ -1105,6 +1141,101 @@ export default function Home() {
           )}
       </div>
     </main>
+  );
+}
+
+function StockSettingsCard({
+  leadTimeDays,
+  safetyDays,
+  saving,
+  onSave,
+}: {
+  leadTimeDays: number;
+  safetyDays: number;
+  saving: boolean;
+  onSave: (leadTimeDays: number, safetyDays: number) => void;
+}) {
+  const [leadTime, setLeadTime] = useState(leadTimeDays.toString());
+  const [safety, setSafety] = useState(safetyDays.toString());
+
+  useEffect(() => {
+    setLeadTime(leadTimeDays.toString());
+    setSafety(safetyDays.toString());
+  }, [leadTimeDays, safetyDays]);
+
+  const parsedLeadTime = Number(leadTime);
+  const parsedSafety = Number(safety);
+
+  const valid =
+    Number.isInteger(parsedLeadTime) &&
+    parsedLeadTime >= 0 &&
+    parsedLeadTime <= 365 &&
+    Number.isInteger(parsedSafety) &&
+    parsedSafety >= 0 &&
+    parsedSafety <= 365;
+
+  return (
+    <section className="bg-[#101116] border border-white/5 rounded-2xl p-6 mb-6">
+      <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+        <div>
+          <h2 className="text-lg font-semibold">
+            Configuração de reposição
+          </h2>
+          <p className="text-sm text-zinc-500 mt-1">
+            Ajuste o prazo do fornecedor e a margem de segurança usados na previsão.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+          <label className="block">
+            <span className="text-xs text-zinc-500">Prazo de entrega</span>
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="number"
+                min="0"
+                max="365"
+                step="1"
+                value={leadTime}
+                onChange={(event) => setLeadTime(event.target.value)}
+                className="w-24 rounded-xl bg-[#0b0c10] border border-white/10 px-3 py-2.5 text-sm text-white outline-none focus:border-white/30"
+              />
+              <span className="text-sm text-zinc-500">dias</span>
+            </div>
+          </label>
+
+          <label className="block">
+            <span className="text-xs text-zinc-500">Margem de segurança</span>
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                type="number"
+                min="0"
+                max="365"
+                step="1"
+                value={safety}
+                onChange={(event) => setSafety(event.target.value)}
+                className="w-24 rounded-xl bg-[#0b0c10] border border-white/10 px-3 py-2.5 text-sm text-white outline-none focus:border-white/30"
+              />
+              <span className="text-sm text-zinc-500">dias</span>
+            </div>
+          </label>
+
+          <button
+            onClick={() => onSave(parsedLeadTime, parsedSafety)}
+            disabled={!valid || saving}
+            className="px-5 py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-zinc-200 disabled:opacity-50"
+          >
+            {saving ? "Salvando..." : "Salvar"}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 text-xs text-zinc-500">
+        Cobertura planejada:{" "}
+        <span className="text-zinc-300 font-semibold">
+          {valid ? parsedLeadTime + parsedSafety : "-"} dias
+        </span>
+      </div>
+    </section>
   );
 }
 
