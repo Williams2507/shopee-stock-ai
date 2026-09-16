@@ -43,6 +43,14 @@ type DashboardData = {
 
   lowStock: any[];
   stockHistory?: any[];
+  purchaseCash?: {
+    total: number;
+    urgent: number;
+    classA: number;
+    normal: number;
+    missingCostItems: number;
+    itemCount: number;
+  };
   stockHealth?: {
     risk: number;
     buyNow: number;
@@ -1802,8 +1810,140 @@ function PurchasesSection({
     (item) => item.abc_class === "A"
   );
 
+  const purchaseCash = data.purchaseCash || {
+    total: 0,
+    urgent: 0,
+    classA: 0,
+    normal: 0,
+    missingCostItems: 0,
+    itemCount: 0,
+  };
+
   return (
     <section className="space-y-6">
+      <div className="bg-[#101116] border border-white/5 rounded-2xl p-6">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div>
+            <h3 className="font-semibold text-lg">Planejamento de caixa</h3>
+            <p className="text-sm text-zinc-500 mt-1">
+              Quanto separar para executar a reposição sugerida usando o custo cadastrado de cada SKU.
+            </p>
+          </div>
+
+          {purchaseCash.missingCostItems > 0 && (
+            <span className="px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 text-xs font-semibold">
+              {purchaseCash.missingCostItems} item(ns) sem custo informado
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 mt-6">
+          <PurchaseMetric
+            title="Investimento sugerido"
+            value={money(purchaseCash.total)}
+          />
+          <PurchaseMetric
+            title="Caixa urgente"
+            value={money(purchaseCash.urgent)}
+          />
+          <PurchaseMetric
+            title="Caixa classe A"
+            value={money(purchaseCash.classA)}
+          />
+          <PurchaseMetric
+            title="Compras normais"
+            value={money(purchaseCash.normal)}
+          />
+          <PurchaseMetric
+            title="SKUs para comprar"
+            value={String(purchaseCash.itemCount)}
+          />
+        </div>
+
+        {purchaseCash.missingCostItems > 0 && (
+          <p className="text-xs text-orange-300/80 mt-4">
+            O total acima não inclui itens cujo custo esteja zerado ou não cadastrado.
+            Esses itens aparecem como “Custo não informado” na lista abaixo.
+          </p>
+        )}
+
+        {prioritizedItems.length > 0 && (
+          <div className="mt-6 overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left text-xs uppercase text-zinc-500 border-b border-white/5">
+                  <th className="py-3 pr-4">Produto</th>
+                  <th className="py-3 pr-4">Prioridade</th>
+                  <th className="py-3 pr-4">Comprar</th>
+                  <th className="py-3 pr-4">Custo unit.</th>
+                  <th className="py-3">Caixa necessário</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prioritizedItems.map((variation) => {
+                  const product = data.products.find(
+                    (item) => item.id === variation.product_id
+                  );
+                  const unitCost = Number(variation.purchase_unit_cost || 0);
+                  const investment = Number(variation.purchase_investment || 0);
+                  const hasCost = Boolean(variation.has_purchase_cost);
+
+                  return (
+                    <tr
+                      key={`cash-${variation.id}`}
+                      className="border-b border-white/5"
+                    >
+                      <td className="py-4 pr-4">
+                        <div className="font-medium text-sm">
+                          {product?.name || "Produto"}
+                        </div>
+                        <div className="text-xs text-zinc-500 mt-1">
+                          {variation.name} · {variation.sku || product?.sku || "-"}
+                        </div>
+                      </td>
+                      <td className="py-4 pr-4">
+                        <span
+                          className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                            variation.purchase_priority === "URGENTE"
+                              ? "bg-red-500/10 text-red-400"
+                              : variation.purchase_priority === "ALTA"
+                                ? "bg-orange-500/10 text-orange-400"
+                                : "bg-white/5 text-zinc-300"
+                          }`}
+                        >
+                          {variation.purchase_priority === "URGENTE"
+                            ? "Urgente"
+                            : variation.purchase_priority === "ALTA"
+                              ? "Alta"
+                              : "Normal"}
+                        </span>
+                      </td>
+                      <td className="py-4 pr-4 text-sm font-semibold">
+                        {Number(variation.suggested_purchase || 0)} un.
+                      </td>
+                      <td className="py-4 pr-4 text-sm">
+                        {hasCost ? money(unitCost) : (
+                          <span className="text-orange-400">
+                            Custo não informado
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 text-sm font-semibold">
+                        {hasCost ? money(investment) : (
+                          <span className="text-orange-400">
+                            Custo não informado
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       <div className="bg-[#101116] border border-white/5 rounded-2xl p-6">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
           <div>

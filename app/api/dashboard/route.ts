@@ -726,6 +726,17 @@ export async function GET(request: Request) {
           excessUnits *
           Number(variation.cost || 0);
 
+        const unitCost =
+          Number(variation.cost || 0);
+
+        const purchaseInvestment =
+          suggestedPurchase > 0 && unitCost > 0
+            ? suggestedPurchase * unitCost
+            : 0;
+
+        const hasPurchaseCost =
+          suggestedPurchase === 0 || unitCost > 0;
+
         let stockHealth = "SAUDAVEL";
 
         if (riskBeforeArrival) {
@@ -831,6 +842,15 @@ export async function GET(request: Request) {
           excess_capital:
             Number(excessCapital.toFixed(2)),
 
+          purchase_unit_cost:
+            unitCost,
+
+          purchase_investment:
+            Number(purchaseInvestment.toFixed(2)),
+
+          has_purchase_cost:
+            hasPurchaseCost,
+
           stock_history:
             variationHistory,
         };
@@ -878,6 +898,69 @@ export async function GET(request: Request) {
       revenue > 0
         ? (grossProfit / revenue) * 100
         : 0;
+
+    // =========================
+    // PLANEJAMENTO DE CAIXA
+    // =========================
+
+    const purchaseCashItems =
+      stockIntelligence.filter(
+        (item) =>
+          Number(item.suggested_purchase || 0) > 0
+      );
+
+    const purchaseCashTotal =
+      purchaseCashItems.reduce(
+        (total, item) =>
+          total +
+          Number(item.purchase_investment || 0),
+        0
+      );
+
+    const urgentPurchaseCash =
+      purchaseCashItems
+        .filter(
+          (item) =>
+            item.purchase_priority === "URGENTE"
+        )
+        .reduce(
+          (total, item) =>
+            total +
+            Number(item.purchase_investment || 0),
+          0
+        );
+
+    const classAPurchaseCash =
+      purchaseCashItems
+        .filter(
+          (item) =>
+            item.abc_class === "A"
+        )
+        .reduce(
+          (total, item) =>
+            total +
+            Number(item.purchase_investment || 0),
+          0
+        );
+
+    const normalPurchaseCash =
+      purchaseCashItems
+        .filter(
+          (item) =>
+            item.purchase_priority === "NORMAL"
+        )
+        .reduce(
+          (total, item) =>
+            total +
+            Number(item.purchase_investment || 0),
+          0
+        );
+
+    const missingCostItems =
+      purchaseCashItems.filter(
+        (item) =>
+          !item.has_purchase_cost
+      ).length;
 
     // =========================
     // RESPOSTA
@@ -945,6 +1028,15 @@ export async function GET(request: Request) {
         topProfitProducts,
         productAnalysis,
         recentOrders,
+      },
+
+      purchaseCash: {
+        total: Number(purchaseCashTotal.toFixed(2)),
+        urgent: Number(urgentPurchaseCash.toFixed(2)),
+        classA: Number(classAPurchaseCash.toFixed(2)),
+        normal: Number(normalPurchaseCash.toFixed(2)),
+        missingCostItems,
+        itemCount: purchaseCashItems.length,
       },
 
       stockHealth: {
