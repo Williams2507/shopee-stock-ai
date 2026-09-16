@@ -888,6 +888,12 @@ export default function Home() {
           money={money}
         />
 
+        {/* HISTÓRICO E TENDÊNCIA */}
+
+        <StockTrendSection
+          data={data}
+        />
+
         {/* SAÚDE DO ESTOQUE */}
 
         <StockHealthSection
@@ -1335,6 +1341,246 @@ export default function Home() {
           )}
       </div>
     </main>
+  );
+}
+
+
+function StockTrendSection({
+  data,
+}: {
+  data: DashboardData;
+}) {
+  const [selectedVariationId, setSelectedVariationId] = useState(
+    data.variations?.[0]?.id || ""
+  );
+
+  const variation =
+    data.variations.find((item) => item.id === selectedVariationId) ||
+    data.variations[0];
+
+  if (!variation) return null;
+
+  const product = data.products.find(
+    (item) => item.id === variation.product_id
+  );
+
+  const history = [...(variation.stock_history || [])]
+    .sort(
+      (a: any, b: any) =>
+        new Date(a.snapshot_date).getTime() -
+        new Date(b.snapshot_date).getTime()
+    )
+    .slice(-30);
+
+  const minStock = Number(variation.min_stock || 0);
+  const values = [
+    ...history.map((item: any) => Number(item.stock || 0)),
+    minStock,
+  ];
+  const maxStock = Math.max(...values, 1);
+  const chartWidth = 900;
+  const chartHeight = 240;
+  const paddingX = 24;
+  const paddingY = 24;
+  const usableWidth = chartWidth - paddingX * 2;
+  const usableHeight = chartHeight - paddingY * 2;
+
+  const points = history.map((item: any, index: number) => {
+    const x =
+      history.length <= 1
+        ? paddingX
+        : paddingX + (index / (history.length - 1)) * usableWidth;
+    const y =
+      paddingY +
+      (1 - Number(item.stock || 0) / maxStock) * usableHeight;
+
+    return { x, y, ...item };
+  });
+
+  const polyline = points.map((point) => `${point.x},${point.y}`).join(" ");
+  const minStockY =
+    paddingY + (1 - Math.min(minStock, maxStock) / maxStock) * usableHeight;
+
+  const hasEnoughHistory = history.length >= 2;
+  const firstStock = hasEnoughHistory ? Number(history[0].stock || 0) : null;
+  const lastStock = history.length
+    ? Number(history[history.length - 1].stock || 0)
+    : Number(variation.stock || 0);
+
+  const trend =
+    hasEnoughHistory && firstStock !== null
+      ? lastStock < firstStock
+        ? "CAINDO"
+        : lastStock > firstStock
+          ? "SUBINDO"
+          : "ESTAVEL"
+      : "SEM_HISTORICO";
+
+  return (
+    <section className="bg-[#101116] border border-white/5 rounded-2xl p-6 mb-6">
+      <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold">Histórico e tendência de estoque</h2>
+          <p className="text-sm text-zinc-500 mt-1">
+            Evolução dos snapshots diários e referência para reposição.
+          </p>
+        </div>
+
+        <select
+          value={variation.id}
+          onChange={(event) => setSelectedVariationId(event.target.value)}
+          className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none"
+        >
+          {data.variations.map((item) => {
+            const itemProduct = data.products.find(
+              (productItem) => productItem.id === item.product_id
+            );
+
+            return (
+              <option key={item.id} value={item.id}>
+                {itemProduct?.name || "Produto"} · {item.name}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+
+      <div className="mt-5">
+        <div className="font-medium">
+          {product?.name || "Produto"} · {variation.name}
+        </div>
+        <div className="text-xs text-zinc-500 mt-1">
+          SKU: {variation.sku || product?.sku || "-"}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-5">
+        <PurchaseMetric
+          title="Estoque atual"
+          value={`${Number(variation.stock || 0)} un.`}
+        />
+        <PurchaseMetric
+          title="Mínimo"
+          value={`${minStock} un.`}
+        />
+        <PurchaseMetric
+          title="Tendência"
+          value={
+            trend === "CAINDO"
+              ? "Caindo"
+              : trend === "SUBINDO"
+                ? "Subindo"
+                : trend === "ESTAVEL"
+                  ? "Estável"
+                  : "Sem histórico"
+          }
+        />
+        <PurchaseMetric
+          title="Ruptura estimada"
+          value={
+            variation.stockout_date
+              ? formatStockDate(variation.stockout_date)
+              : "Sem previsão"
+          }
+        />
+        <PurchaseMetric
+          title="Pedir até"
+          value={
+            variation.order_by_date
+              ? formatStockDate(variation.order_by_date)
+              : "Sem previsão"
+          }
+        />
+      </div>
+
+      {hasEnoughHistory ? (
+        <div className="mt-6 rounded-xl bg-white/[0.02] border border-white/5 p-4 overflow-x-auto">
+          <svg
+            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+            className="w-full min-w-[700px] h-[260px]"
+            role="img"
+            aria-label="Gráfico do histórico de estoque"
+          >
+            <line
+              x1={paddingX}
+              x2={chartWidth - paddingX}
+              y1={minStockY}
+              y2={minStockY}
+              stroke="currentColor"
+              strokeOpacity="0.25"
+              strokeDasharray="8 6"
+            />
+            <text
+              x={paddingX}
+              y={Math.max(minStockY - 8, 12)}
+              fill="currentColor"
+              opacity="0.5"
+              fontSize="12"
+            >
+              mínimo {minStock}
+            </text>
+
+            <polyline
+              points={polyline}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+
+            {points.map((point: any, index: number) => (
+              <g key={`${point.snapshot_date}-${index}`}>
+                <circle
+                  cx={point.x}
+                  cy={point.y}
+                  r="4"
+                  fill="currentColor"
+                />
+                {(index === 0 || index === points.length - 1) && (
+                  <>
+                    <text
+                      x={point.x}
+                      y={Math.max(point.y - 10, 12)}
+                      textAnchor={index === 0 ? "start" : "end"}
+                      fill="currentColor"
+                      fontSize="12"
+                    >
+                      {Number(point.stock || 0)} un.
+                    </text>
+                    <text
+                      x={point.x}
+                      y={chartHeight - 5}
+                      textAnchor={index === 0 ? "start" : "end"}
+                      fill="currentColor"
+                      opacity="0.5"
+                      fontSize="11"
+                    >
+                      {formatStockDate(point.snapshot_date)}
+                    </text>
+                  </>
+                )}
+              </g>
+            ))}
+          </svg>
+        </div>
+      ) : (
+        <div className="mt-6 rounded-xl bg-white/[0.02] border border-white/5 py-12 text-center">
+          <div className="font-medium">Histórico insuficiente</div>
+          <div className="text-sm text-zinc-500 mt-1">
+            São necessários pelo menos 2 snapshots diários para mostrar uma tendência.
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-3 mt-4 text-xs text-zinc-500">
+        <span>{history.length} snapshot(s) exibido(s)</span>
+        <span>·</span>
+        <span>Máximo de 30 registros recentes</span>
+        <span>·</span>
+        <span>Sem histórico suficiente, nenhuma tendência é inventada.</span>
+      </div>
+    </section>
   );
 }
 
