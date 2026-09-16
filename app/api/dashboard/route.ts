@@ -93,15 +93,26 @@ export async function GET(request: Request) {
     );
 
     const lowStock = variations
-      .filter(
-        (variation) =>
-          Number(variation.stock || 0) <= 5
-      )
-      .sort(
-        (a, b) =>
-          Number(a.stock || 0) -
-          Number(b.stock || 0)
-      );
+    .filter((variation) => {
+      const stock = Number(variation.stock || 0);
+      const minStock = Number(variation.min_stock ?? 5);
+  
+      return stock <= minStock;
+    })
+    .map((variation) => ({
+      ...variation,
+      min_stock: Number(variation.min_stock ?? 5),
+      restock_needed: Math.max(
+        Number(variation.min_stock ?? 5) -
+          Number(variation.stock || 0),
+        0
+      ),
+    }))
+    .sort(
+      (a, b) =>
+        Number(a.stock || 0) -
+        Number(b.stock || 0)
+    );
 
     // =========================
     // PEDIDOS
