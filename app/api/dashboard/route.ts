@@ -15,6 +15,10 @@ export async function GET(request: Request) {
       ? period
       : 30;
 
+    // A previsão de estoque usa sempre uma janela fixa,
+    // independente do filtro visual de Performance.
+    const STOCK_FORECAST_DAYS = 30;
+
 
 
     // =========================
@@ -121,13 +125,13 @@ export async function GET(request: Request) {
     );
 
     // =========================
-    // PEDIDOS
+    // PEDIDOS DE PERFORMANCE
     // =========================
 
-    const startDate = new Date();
+    const performanceStartDate = new Date();
 
-    startDate.setDate(
-      startDate.getDate() - selectedPeriod
+    performanceStartDate.setDate(
+      performanceStartDate.getDate() - selectedPeriod
     );
 
     const {
@@ -139,7 +143,7 @@ export async function GET(request: Request) {
       .eq("store_id", store.id)
       .gte(
         "order_date",
-        startDate.toISOString()
+        performanceStartDate.toISOString()
       )
       .order("order_date", {
         ascending: false,
@@ -149,8 +153,6 @@ export async function GET(request: Request) {
       throw ordersError;
     }
 
-    // Não usamos pedidos cancelados
-    // na previsão de vendas.
     const validOrders =
       orders?.filter(
         (order) =>
@@ -165,7 +167,7 @@ export async function GET(request: Request) {
     );
 
     // =========================
-    // ITENS DOS PEDIDOS
+    // ITENS DA PERFORMANCE
     // =========================
 
     let orderItems: any[] = [];
@@ -182,6 +184,62 @@ export async function GET(request: Request) {
       }
 
       orderItems = data || [];
+    }
+
+    // =========================
+    // PEDIDOS DA PREVISÃO
+    // =========================
+
+    const forecastStartDate = new Date();
+
+    forecastStartDate.setDate(
+      forecastStartDate.getDate() - STOCK_FORECAST_DAYS
+    );
+
+    const {
+      data: forecastOrders,
+      error: forecastOrdersError,
+    } = await supabaseAdmin
+      .from("orders")
+      .select("id, status")
+      .eq("store_id", store.id)
+      .gte(
+        "order_date",
+        forecastStartDate.toISOString()
+      );
+
+    if (forecastOrdersError) {
+      throw forecastOrdersError;
+    }
+
+    const validForecastOrders =
+      forecastOrders?.filter(
+        (order) =>
+          ![
+            "CANCELLED",
+            "IN_CANCEL",
+          ].includes(order.status)
+      ) || [];
+
+    const forecastOrderIds =
+      validForecastOrders.map(
+        (order) => order.id
+      );
+
+    let forecastOrderItems: any[] = [];
+
+    if (forecastOrderIds.length > 0) {
+      const { data, error } =
+        await supabaseAdmin
+          .from("order_items")
+          .select("*")
+          .in("order_id", forecastOrderIds);
+
+      if (error) {
+        throw error;
+      }
+
+      forecastOrderItems = data || [];
     }
 
     // =========================
@@ -252,11 +310,33 @@ export async function GET(request: Request) {
 
         // Busca todos os itens vendidos
         // referentes a esta variação.
+        const productVariations =
+          variations.filter(
+            (candidate) =>
+              candidate.product_id ===
+              variation.product_id
+          );
+
         const variationItems =
-          orderItems.filter(
-            (item) =>
-              item.variation_id ===
-              variation.id
+          forecastOrderItems.filter(
+            (item) => {
+              if (
+                item.variation_id ===
+                variation.id
+              ) {
+                return true;
+              }
+
+              // Produtos sem variação podem chegar do pedido
+              // somente com product_id. Nesse caso, atribuímos
+              // a venda à única variação virtual do produto.
+              return (
+                !item.variation_id &&
+                item.product_id ===
+                  variation.product_id &&
+                productVariations.length === 1
+              );
+            }
           );
 
         const soldUnits =
@@ -267,10 +347,11 @@ export async function GET(request: Request) {
             0
           );
 
-        // Média de unidades vendidas por dia
-        // dentro do período selecionado.
+        // Média diária usada exclusivamente pela previsão.
+        // Ela não muda quando o usuário troca o filtro
+        // de Performance entre Hoje / 7 / 30 / 90 dias.
         const averageDailySales =
-          soldUnits / selectedPeriod;
+          soldUnits / STOCK_FORECAST_DAYS;
 
         // Quantos dias o estoque atual
         // deve durar mantendo a média atual.
@@ -472,6 +553,9 @@ export async function GET(request: Request) {
 
         coverageTargetDays:
           COVERAGE_TARGET_DAYS,
+
+        forecastDays:
+          STOCK_FORECAST_DAYS,
       },
 
       store: {
