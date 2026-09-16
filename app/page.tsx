@@ -43,6 +43,16 @@ type DashboardData = {
 
   lowStock: any[];
   stockHistory?: any[];
+  stockHealth?: {
+    risk: number;
+    buyNow: number;
+    healthy: number;
+    slowMoving: number;
+    excess: number;
+    noHistory: number;
+    excessUnits: number;
+    excessCapital: number;
+  };
 };
 
 
@@ -837,6 +847,13 @@ export default function Home() {
 
         </section>
 
+        {/* SAÚDE DO ESTOQUE */}
+
+        <StockHealthSection
+          data={data}
+          money={money}
+        />
+
         {/* CONFIGURAÇÃO DE REPOSIÇÃO */}
 
         <StockSettingsCard
@@ -1277,6 +1294,161 @@ export default function Home() {
           )}
       </div>
     </main>
+  );
+}
+
+
+function StockHealthSection({
+  data,
+  money,
+}: {
+  data: DashboardData;
+  money: (value: number) => string;
+}) {
+  const health = data.stockHealth || {
+    risk: 0,
+    buyNow: 0,
+    healthy: 0,
+    slowMoving: 0,
+    excess: 0,
+    noHistory: 0,
+    excessUnits: 0,
+    excessCapital: 0,
+  };
+
+  const attentionItems = [...data.variations]
+    .filter((item) =>
+      ["RISCO_RUPTURA", "COMPRAR_AGORA", "EXCESSO", "BAIXO_GIRO"].includes(
+        item.stock_health
+      )
+    )
+    .sort(
+      (a, b) =>
+        Number(b.purchase_priority_score || 0) -
+        Number(a.purchase_priority_score || 0)
+    )
+    .slice(0, 8);
+
+  function healthLabel(value: string) {
+    if (value === "RISCO_RUPTURA") return "Risco de ruptura";
+    if (value === "COMPRAR_AGORA") return "Comprar agora";
+    if (value === "EXCESSO") return "Possível excesso";
+    if (value === "BAIXO_GIRO") return "Baixo giro";
+    if (value === "SEM_HISTORICO") return "Sem histórico";
+    return "Saudável";
+  }
+
+  function healthClass(value: string) {
+    if (value === "RISCO_RUPTURA") return "bg-red-500/10 text-red-400";
+    if (value === "COMPRAR_AGORA") return "bg-orange-500/10 text-orange-400";
+    if (value === "EXCESSO") return "bg-yellow-500/10 text-yellow-300";
+    if (value === "BAIXO_GIRO") return "bg-white/5 text-zinc-300";
+    return "bg-green-500/10 text-green-400";
+  }
+
+  return (
+    <section className="bg-[#101116] border border-white/5 rounded-2xl p-6 mb-6">
+      <div>
+        <h2 className="text-xl font-semibold">Saúde do estoque</h2>
+        <p className="text-sm text-zinc-500 mt-1">
+          Diagnóstico usando giro, cobertura, prazo de reposição e necessidade de compra.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mt-6">
+        <PurchaseMetric title="Risco" value={String(health.risk)} />
+        <PurchaseMetric title="Comprar agora" value={String(health.buyNow)} />
+        <PurchaseMetric title="Saudável" value={String(health.healthy)} />
+        <PurchaseMetric title="Baixo giro" value={String(health.slowMoving)} />
+        <PurchaseMetric title="Excesso" value={String(health.excess)} />
+        <PurchaseMetric title="Sem histórico" value={String(health.noHistory)} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div className="rounded-xl bg-white/[0.03] p-4">
+          <div className="text-xs text-zinc-500">Unidades em possível excesso</div>
+          <div className="text-xl font-bold mt-1">{health.excessUnits} un.</div>
+        </div>
+        <div className="rounded-xl bg-white/[0.03] p-4">
+          <div className="text-xs text-zinc-500">Capital estimado no excesso</div>
+          <div className="text-xl font-bold mt-1">
+            {money(Number(health.excessCapital || 0))}
+          </div>
+        </div>
+      </div>
+
+      {attentionItems.length > 0 && (
+        <div className="mt-6">
+          <h3 className="font-semibold">Itens para observar</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
+            {attentionItems.map((variation) => {
+              const product = data.products.find(
+                (item) => item.id === variation.product_id
+              );
+
+              return (
+                <div
+                  key={`health-${variation.id}`}
+                  className="rounded-xl border border-white/5 bg-white/[0.02] p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-medium text-sm">
+                        {product?.name || "Produto"}
+                      </div>
+                      <div className="text-xs text-zinc-500 mt-1">
+                        {variation.name} · {variation.sku || product?.sku || "-"}
+                      </div>
+                    </div>
+                    <span
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${healthClass(
+                        variation.stock_health
+                      )}`}
+                    >
+                      {healthLabel(variation.stock_health)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-xs">
+                    <div>
+                      <div className="text-zinc-500">Estoque</div>
+                      <div className="font-semibold mt-1">
+                        {Number(variation.stock || 0)} un.
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-zinc-500">Cobertura</div>
+                      <div className="font-semibold mt-1">
+                        {variation.days_of_stock == null
+                          ? "Sem histórico"
+                          : `${Number(variation.days_of_stock).toFixed(1)} dias`}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-zinc-500">Comprar</div>
+                      <div className="font-semibold mt-1">
+                        {Number(variation.suggested_purchase || 0)} un.
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-zinc-500">Excesso</div>
+                      <div className="font-semibold mt-1">
+                        {Number(variation.excess_units || 0)} un.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <p className="text-xs text-zinc-600 mt-5">
+        Possível excesso é uma estimativa baseada em mais de duas vezes a cobertura-alvo.
+        Produtos sem histórico de vendas não são classificados como excesso.
+      </p>
+    </section>
   );
 }
 

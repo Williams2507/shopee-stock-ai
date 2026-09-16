@@ -702,6 +702,53 @@ export async function GET(request: Request) {
                 ? "NORMAL"
                 : "SEM_COMPRA";
 
+        /*
+         * Saúde do estoque.
+         * Excesso só é estimado quando existe histórico real de vendas.
+         * Sem histórico, evitamos chamar estoque parado de "excesso".
+         */
+        const excessThresholdDays =
+          COVERAGE_TARGET_DAYS * 2;
+
+        const excessUnits =
+          hasSalesHistory
+            ? Math.max(
+                stock -
+                  Math.ceil(
+                    averageDailySales *
+                      excessThresholdDays
+                  ),
+                0
+              )
+            : 0;
+
+        const excessCapital =
+          excessUnits *
+          Number(variation.cost || 0);
+
+        let stockHealth = "SAUDAVEL";
+
+        if (riskBeforeArrival) {
+          stockHealth = "RISCO_RUPTURA";
+        } else if (suggestedPurchase > 0) {
+          stockHealth = "COMPRAR_AGORA";
+        } else if (
+          hasSalesHistory &&
+          excessUnits > 0
+        ) {
+          stockHealth = "EXCESSO";
+        } else if (
+          hasSalesHistory &&
+          averageDailySales > 0 &&
+          daysOfStock !== null &&
+          daysOfStock >
+            excessThresholdDays
+        ) {
+          stockHealth = "BAIXO_GIRO";
+        } else if (!hasSalesHistory) {
+          stockHealth = "SEM_HISTORICO";
+        }
+
         return {
           ...variation,
 
@@ -771,6 +818,18 @@ export async function GET(request: Request) {
 
           purchase_priority:
             purchasePriority,
+
+          stock_health:
+            stockHealth,
+
+          excess_threshold_days:
+            excessThresholdDays,
+
+          excess_units:
+            excessUnits,
+
+          excess_capital:
+            Number(excessCapital.toFixed(2)),
 
           stock_history:
             variationHistory,
@@ -886,6 +945,37 @@ export async function GET(request: Request) {
         topProfitProducts,
         productAnalysis,
         recentOrders,
+      },
+
+      stockHealth: {
+        risk: stockIntelligence.filter(
+          (item) => item.stock_health === "RISCO_RUPTURA"
+        ).length,
+        buyNow: stockIntelligence.filter(
+          (item) => item.stock_health === "COMPRAR_AGORA"
+        ).length,
+        healthy: stockIntelligence.filter(
+          (item) => item.stock_health === "SAUDAVEL"
+        ).length,
+        slowMoving: stockIntelligence.filter(
+          (item) => item.stock_health === "BAIXO_GIRO"
+        ).length,
+        excess: stockIntelligence.filter(
+          (item) => item.stock_health === "EXCESSO"
+        ).length,
+        noHistory: stockIntelligence.filter(
+          (item) => item.stock_health === "SEM_HISTORICO"
+        ).length,
+        excessUnits: stockIntelligence.reduce(
+          (total, item) =>
+            total + Number(item.excess_units || 0),
+          0
+        ),
+        excessCapital: stockIntelligence.reduce(
+          (total, item) =>
+            total + Number(item.excess_capital || 0),
+          0
+        ),
       },
 
       lowStock,
