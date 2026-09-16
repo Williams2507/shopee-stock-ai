@@ -888,6 +888,12 @@ export default function Home() {
           money={money}
         />
 
+        {/* PREVISÃO DE DEMANDA */}
+
+        <DemandForecastSection
+          data={data}
+        />
+
         {/* HISTÓRICO E TENDÊNCIA */}
 
         <StockTrendSection
@@ -1341,6 +1347,125 @@ export default function Home() {
           )}
       </div>
     </main>
+  );
+}
+
+
+function DemandForecastSection({
+  data,
+}: {
+  data: DashboardData;
+}) {
+  const rows = [...data.variations].sort((a, b) => {
+    const gapA = a.stock_target_gap == null ? -Infinity : Number(a.stock_target_gap);
+    const gapB = b.stock_target_gap == null ? -Infinity : Number(b.stock_target_gap);
+    return gapB - gapA;
+  });
+
+  const withHistory = rows.filter((item) => item.has_sales_history);
+  const belowTarget = withHistory.filter((item) => item.stock_target_status === "ABAIXO_META").length;
+  const onTarget = withHistory.filter((item) => item.stock_target_status === "NA_META").length;
+  const aboveTarget = withHistory.filter((item) => item.stock_target_status === "ACIMA_META").length;
+
+  function statusLabel(status: string) {
+    if (status === "ABAIXO_META") return "Abaixo da meta";
+    if (status === "ACIMA_META") return "Acima da meta";
+    if (status === "NA_META") return "Na meta";
+    return "Sem histórico";
+  }
+
+  function statusClass(status: string) {
+    if (status === "ABAIXO_META") return "bg-red-500/10 text-red-400";
+    if (status === "ACIMA_META") return "bg-white/5 text-zinc-300";
+    if (status === "NA_META") return "bg-green-500/10 text-green-400";
+    return "bg-white/5 text-zinc-500";
+  }
+
+  return (
+    <section className="bg-[#101116] border border-white/5 rounded-2xl p-6 mb-6">
+      <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold">Previsão de demanda e meta de estoque</h2>
+          <p className="text-sm text-zinc-500 mt-1">
+            Projeção baseada na média diária dos 30 dias usados pela inteligência de estoque.
+          </p>
+        </div>
+        <span className="px-3 py-1.5 rounded-lg bg-white/5 text-xs text-zinc-400">
+          Cobertura-alvo: {Number(data.stockSettings?.coverageTargetDays || 0)} dias
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        <PurchaseMetric title="Com histórico" value={String(withHistory.length)} />
+        <PurchaseMetric title="Abaixo da meta" value={String(belowTarget)} />
+        <PurchaseMetric title="Na meta" value={String(onTarget)} />
+        <PurchaseMetric title="Acima da meta" value={String(aboveTarget)} />
+      </div>
+
+      <div className="mt-6 overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="text-left text-xs uppercase text-zinc-500 border-b border-white/5">
+              <th className="py-3 pr-4">Produto / SKU</th>
+              <th className="py-3 pr-4">Média/dia</th>
+              <th className="py-3 pr-4">7 dias</th>
+              <th className="py-3 pr-4">15 dias</th>
+              <th className="py-3 pr-4">30 dias</th>
+              <th className="py-3 pr-4">Atual</th>
+              <th className="py-3 pr-4">Meta</th>
+              <th className="py-3 pr-4">Diferença</th>
+              <th className="py-3">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((variation) => {
+              const product = data.products.find((item) => item.id === variation.product_id);
+              const hasHistory = Boolean(variation.has_sales_history);
+              const gap = variation.stock_target_gap == null ? null : Number(variation.stock_target_gap);
+
+              return (
+                <tr key={`forecast-${variation.id}`} className="border-b border-white/5">
+                  <td className="py-4 pr-4">
+                    <div className="text-sm font-medium">{product?.name || "Produto"}</div>
+                    <div className="text-xs text-zinc-500 mt-1">
+                      {variation.name} · {variation.sku || product?.sku || "-"}
+                    </div>
+                  </td>
+                  <td className="py-4 pr-4 text-sm">
+                    {hasHistory ? Number(variation.average_daily_sales || 0).toFixed(2) : "Sem histórico"}
+                  </td>
+                  <td className="py-4 pr-4 text-sm">
+                    {hasHistory ? `${Number(variation.demand_projection_7 || 0).toFixed(1)} un.` : "-"}
+                  </td>
+                  <td className="py-4 pr-4 text-sm">
+                    {hasHistory ? `${Number(variation.demand_projection_15 || 0).toFixed(1)} un.` : "-"}
+                  </td>
+                  <td className="py-4 pr-4 text-sm">
+                    {hasHistory ? `${Number(variation.demand_projection_30 || 0).toFixed(1)} un.` : "-"}
+                  </td>
+                  <td className="py-4 pr-4 text-sm font-semibold">{Number(variation.stock || 0)} un.</td>
+                  <td className="py-4 pr-4 text-sm font-semibold">
+                    {hasHistory ? `${Number(variation.recommended_stock || 0)} un.` : "-"}
+                  </td>
+                  <td className="py-4 pr-4 text-sm font-semibold">
+                    {gap == null ? "-" : gap > 0 ? `Faltam ${gap} un.` : gap < 0 ? `${Math.abs(gap)} un. acima` : "0 un."}
+                  </td>
+                  <td className="py-4">
+                    <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold ${statusClass(variation.stock_target_status)}`}>
+                      {statusLabel(variation.stock_target_status)}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="text-xs text-zinc-600 mt-4">
+        As projeções são estimativas lineares a partir da média diária observada. SKUs sem histórico de vendas não recebem demanda projetada.
+      </p>
+    </section>
   );
 }
 

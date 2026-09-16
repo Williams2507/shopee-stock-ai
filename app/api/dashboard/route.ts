@@ -772,6 +772,35 @@ export async function GET(request: Request) {
               averageDailySales.toFixed(2)
             ),
 
+          demand_projection_7:
+            hasSalesHistory
+              ? Number((averageDailySales * 7).toFixed(2))
+              : null,
+
+          demand_projection_15:
+            hasSalesHistory
+              ? Number((averageDailySales * 15).toFixed(2))
+              : null,
+
+          demand_projection_30:
+            hasSalesHistory
+              ? Number((averageDailySales * 30).toFixed(2))
+              : null,
+
+          stock_target_gap:
+            hasSalesHistory
+              ? recommendedStock - stock
+              : null,
+
+          stock_target_status:
+            !hasSalesHistory
+              ? "SEM_HISTORICO"
+              : stock < recommendedStock
+                ? "ABAIXO_META"
+                : stock > recommendedStock
+                  ? "ACIMA_META"
+                  : "NA_META",
+
           days_of_stock:
             daysOfStock === null
               ? null
