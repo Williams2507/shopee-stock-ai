@@ -43,6 +43,13 @@ type DashboardData = {
 
   lowStock: any[];
   stockHistory?: any[];
+  alerts?: {
+    total: number;
+    critical: number;
+    attention: number;
+    info: number;
+    items: any[];
+  };
   executiveInsights?: {
     revenue: number;
     grossProfit: number;
@@ -868,6 +875,12 @@ export default function Home() {
 
         </section>
 
+        {/* CENTRAL DE ALERTAS */}
+
+        <AlertsCenter
+          data={data}
+        />
+
         {/* PAINEL EXECUTIVO */}
 
         <ExecutiveInsights
@@ -1322,6 +1335,149 @@ export default function Home() {
           )}
       </div>
     </main>
+  );
+}
+
+
+function AlertsCenter({
+  data,
+}: {
+  data: DashboardData;
+}) {
+  const alerts = data.alerts || {
+    total: 0,
+    critical: 0,
+    attention: 0,
+    info: 0,
+    items: [],
+  };
+
+  function alertStyle(level: string) {
+    if (level === "CRITICO") {
+      return {
+        badge: "bg-red-500/10 text-red-400",
+        border: "border-red-500/10",
+        label: "Crítico",
+      };
+    }
+
+    if (level === "ATENCAO") {
+      return {
+        badge: "bg-orange-500/10 text-orange-400",
+        border: "border-orange-500/10",
+        label: "Atenção",
+      };
+    }
+
+    return {
+      badge: "bg-white/5 text-zinc-300",
+      border: "border-white/5",
+      label: "Informação",
+    };
+  }
+
+  return (
+    <section className="bg-[#101116] border border-white/5 rounded-2xl p-6 mb-6">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-semibold">Central de alertas</h2>
+            <span className="px-2.5 py-1 rounded-lg bg-white/5 text-xs font-semibold">
+              {alerts.total}
+            </span>
+          </div>
+          <p className="text-sm text-zinc-500 mt-1">
+            Avisos operacionais gerados pelos dados de estoque e reposição.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2 text-xs font-semibold">
+          <span className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400">
+            {alerts.critical} crítico(s)
+          </span>
+          <span className="px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400">
+            {alerts.attention} atenção
+          </span>
+          <span className="px-3 py-1.5 rounded-lg bg-white/5 text-zinc-400">
+            {alerts.info} informação
+          </span>
+        </div>
+      </div>
+
+      {alerts.items.length > 0 ? (
+        <div className="space-y-3 mt-6">
+          {alerts.items.slice(0, 12).map((alert: any) => {
+            const variation = data.variations.find(
+              (item) => item.id === alert.variation_id
+            );
+            const product = data.products.find(
+              (item) => item.id === alert.product_id
+            );
+            const style = alertStyle(alert.level);
+
+            return (
+              <div
+                key={alert.id}
+                className={`rounded-xl border ${style.border} bg-white/[0.02] p-4`}
+              >
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`px-2 py-1 rounded-lg text-xs font-semibold ${style.badge}`}
+                      >
+                        {style.label}
+                      </span>
+                      <span className="font-semibold text-sm">
+                        {alert.title}
+                      </span>
+                    </div>
+
+                    <div className="text-sm text-zinc-300 mt-3">
+                      {product?.name || "Produto"}
+                      {variation?.name ? ` · ${variation.name}` : ""}
+                    </div>
+
+                    <div className="text-xs text-zinc-500 mt-1">
+                      SKU: {variation?.sku || product?.sku || "-"}
+                    </div>
+
+                    <div className="text-xs text-zinc-400 mt-2">
+                      {alert.message}
+                    </div>
+                  </div>
+
+                  <div className="md:text-right shrink-0">
+                    <div className="text-xs text-zinc-500">Ação sugerida</div>
+                    <div className="text-sm font-semibold mt-1">
+                      {alert.action}
+                    </div>
+                    {alert.order_by_date && (
+                      <div className="text-xs text-zinc-500 mt-2">
+                        Pedir até {formatStockDate(alert.order_by_date)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="mt-6 py-10 rounded-xl bg-white/[0.02] text-center">
+          <div className="font-medium">Nenhum alerta ativo</div>
+          <div className="text-sm text-zinc-500 mt-1">
+            Não há nenhuma ação crítica identificada com os dados disponíveis.
+          </div>
+        </div>
+      )}
+
+      {alerts.items.length > 12 && (
+        <div className="text-xs text-zinc-500 mt-4">
+          Mostrando os 12 alertas mais importantes de {alerts.total}.
+        </div>
+      )}
+    </section>
   );
 }
 

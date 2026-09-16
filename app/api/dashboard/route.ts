@@ -963,6 +963,118 @@ export async function GET(request: Request) {
       ).length;
 
     // =========================
+    // CENTRAL DE ALERTAS
+    // =========================
+
+    const alerts = stockIntelligence.flatMap((item) => {
+      const itemAlerts: any[] = [];
+
+      if (item.risk_before_arrival) {
+        itemAlerts.push({
+          id: `ruptura-${item.id}`,
+          variation_id: item.id,
+          product_id: item.product_id,
+          level: "CRITICO",
+          type: "RUPTURA",
+          title: "Risco de ruptura antes da reposição",
+          message: `Estoque atual: ${item.stock} un. Compra sugerida: ${item.suggested_purchase} un.`,
+          action: "Priorizar reposição",
+          order_by_date: item.order_by_date,
+        });
+      }
+
+      if (
+        Number(item.suggested_purchase || 0) > 0 &&
+        item.order_by_date &&
+        item.order_by_date <= new Date().toISOString().slice(0, 10)
+      ) {
+        itemAlerts.push({
+          id: `pedido-${item.id}`,
+          variation_id: item.id,
+          product_id: item.product_id,
+          level: "CRITICO",
+          type: "PEDIDO_HOJE",
+          title: "Pedido precisa ser feito agora",
+          message: `Reposição sugerida: ${item.suggested_purchase} un.`,
+          action: "Preparar pedido de compra",
+          order_by_date: item.order_by_date,
+        });
+      }
+
+      if (item.low_manual_stock) {
+        itemAlerts.push({
+          id: `minimo-${item.id}`,
+          variation_id: item.id,
+          product_id: item.product_id,
+          level: "ATENCAO",
+          type: "ABAIXO_MINIMO",
+          title: "Estoque abaixo do mínimo",
+          message: `Atual: ${item.stock} un. Mínimo: ${item.min_stock} un.`,
+          action: "Revisar reposição",
+        });
+      }
+
+      if (
+        Number(item.suggested_purchase || 0) > 0 &&
+        !item.has_purchase_cost
+      ) {
+        itemAlerts.push({
+          id: `custo-${item.id}`,
+          variation_id: item.id,
+          product_id: item.product_id,
+          level: "ATENCAO",
+          type: "SEM_CUSTO",
+          title: "Custo não cadastrado",
+          message: "Não é possível calcular corretamente o caixa necessário para este SKU.",
+          action: "Cadastrar custo",
+        });
+      }
+
+      if (item.stock_health === "EXCESSO") {
+        itemAlerts.push({
+          id: `excesso-${item.id}`,
+          variation_id: item.id,
+          product_id: item.product_id,
+          level: "INFO",
+          type: "EXCESSO",
+          title: "Possível excesso de estoque",
+          message: `${item.excess_units} un. acima da cobertura estimada, representando ${Number(item.excess_capital || 0).toFixed(2)} em custo.`,
+          action: "Revisar compra e giro",
+        });
+      }
+
+      if (
+        item.abc_class === "A" &&
+        (
+          item.purchase_priority === "URGENTE" ||
+          item.purchase_priority === "ALTA"
+        )
+      ) {
+        itemAlerts.push({
+          id: `abc-a-${item.id}`,
+          variation_id: item.id,
+          product_id: item.product_id,
+          level: item.purchase_priority === "URGENTE" ? "CRITICO" : "ATENCAO",
+          type: "ABC_A",
+          title: "Produto Classe A exige atenção",
+          message: `Prioridade de compra: ${item.purchase_priority === "URGENTE" ? "Urgente" : "Alta"}.`,
+          action: "Priorizar este SKU",
+          order_by_date: item.order_by_date,
+        });
+      }
+
+      return itemAlerts;
+    }).sort((a, b) => {
+      const weight: Record<string, number> = {
+        CRITICO: 3,
+        ATENCAO: 2,
+        INFO: 1,
+      };
+
+      return (weight[b.level] || 0) - (weight[a.level] || 0);
+    });
+
+    // =========================
     // RESPOSTA
     // =========================
 
@@ -1028,6 +1140,14 @@ export async function GET(request: Request) {
         topProfitProducts,
         productAnalysis,
         recentOrders,
+      },
+
+      alerts: {
+        total: alerts.length,
+        critical: alerts.filter((alert) => alert.level === "CRITICO").length,
+        attention: alerts.filter((alert) => alert.level === "ATENCAO").length,
+        info: alerts.filter((alert) => alert.level === "INFO").length,
+        items: alerts,
       },
 
       executiveInsights: {
