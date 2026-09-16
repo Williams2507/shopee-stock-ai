@@ -427,45 +427,7 @@ export default function Home() {
         );
       }
 
-      setData((current) => {
-        if (!current) return current;
-
-        const variations = current.variations.map((variation) =>
-          variation.id === variationId
-            ? {
-                ...variation,
-                min_stock: minStock,
-              }
-            : variation
-        );
-
-        const lowStock = variations
-          .filter(
-            (variation) =>
-              Number(variation.stock || 0) <=
-              Number(variation.min_stock ?? 5)
-          )
-          .map((variation) => ({
-            ...variation,
-            min_stock: Number(variation.min_stock ?? 5),
-            restock_needed: Math.max(
-              Number(variation.min_stock ?? 5) -
-                Number(variation.stock || 0),
-              0
-            ),
-          }))
-          .sort(
-            (a, b) =>
-              Number(a.stock || 0) -
-              Number(b.stock || 0)
-          );
-
-        return {
-          ...current,
-          variations,
-          lowStock,
-        };
-      });
+      await loadDashboard(period);
 
       setStockMessage(
         "Estoque mínimo atualizado com sucesso!"
@@ -848,6 +810,14 @@ export default function Home() {
                       Mínimo
                     </th>
 
+                    <th className="px-5 py-4">
+                      Cobertura
+                    </th>
+
+                    <th className="px-5 py-4">
+                      Comprar
+                    </th>
+
                   </tr>
                 </thead>
 
@@ -868,6 +838,27 @@ export default function Home() {
                         const stock =
                           Number(
                             variation.stock || 0
+                          );
+
+                        const averageDailySales =
+                          Number(
+                            variation.average_daily_sales || 0
+                          );
+
+                        const coverageDays =
+                          variation.days_of_stock === null ||
+                          variation.days_of_stock === undefined
+                            ? null
+                            : Number(variation.days_of_stock);
+
+                        const suggestedPurchase =
+                          Number(
+                            variation.suggested_purchase ??
+                              Math.max(
+                                Number(variation.min_stock ?? 5) -
+                                  stock,
+                                0
+                              )
                           );
 
                         return (
@@ -944,6 +935,39 @@ export default function Home() {
                               />
                             </td>
 
+                            <td className="px-5 py-4 text-sm">
+                              {averageDailySales > 0 &&
+                              coverageDays !== null ? (
+                                <span
+                                  className={
+                                    Boolean(
+                                      variation.risk_before_arrival
+                                    )
+                                      ? "text-red-400 font-semibold"
+                                      : "text-zinc-300"
+                                  }
+                                >
+                                  {coverageDays.toFixed(1)} dias
+                                </span>
+                              ) : (
+                                <span className="text-zinc-500">
+                                  Sem histórico
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="px-5 py-4">
+                              {suggestedPurchase > 0 ? (
+                                <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400">
+                                  {suggestedPurchase} un.
+                                </span>
+                              ) : (
+                                <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold bg-green-500/10 text-green-400">
+                                  0 un.
+                                </span>
+                              )}
+                            </td>
+
                           </tr>
                         );
                       }
@@ -953,7 +977,7 @@ export default function Home() {
 
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={8}
                         className="px-5 py-12 text-center text-zinc-500"
                       >
                         Nenhum produto cadastrado.
