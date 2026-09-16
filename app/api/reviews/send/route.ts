@@ -39,7 +39,20 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
+    // =====================================================
+    // BLOQUEIA AVALIAÇÕES DE TESTE
+    // =====================================================
 
+    if (review.is_test) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Avaliações de teste não podem ser enviadas para a Shopee.",
+        },
+        { status: 400 }
+      );
+    }
     // Usa a resposta editada, caso exista.
     // Caso contrário, usa a resposta preparada.
     const responseText =
