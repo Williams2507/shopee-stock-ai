@@ -1,6 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createClient, type User } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 type DashboardData = {
   success: boolean;
@@ -99,6 +105,9 @@ type Review = {
 };
 
 export default function Home() {
+  const [authReady, setAuthReady] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
   const [data, setData] =
     useState<DashboardData | null>(null);
 
@@ -175,8 +184,36 @@ export default function Home() {
   }
 
   useEffect(() => {
-    loadDashboard(period);
-  }, [period]);
+    let mounted = true;
+
+    supabase.auth.getUser().then(({ data: authData }) => {
+      if (!mounted) return;
+      setUser(authData.user ?? null);
+      setAuthReady(true);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      setUser(session?.user ?? null);
+      setAuthReady(true);
+    });
+
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (authReady && user) {
+      loadDashboard(period);
+    }
+  }, [period, authReady, user]);
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
 
 
   async function loadReviews() {
@@ -536,6 +573,23 @@ export default function Home() {
     ).format(value || 0);
   }
 
+  if (!authReady) {
+    return (
+      <main className="min-h-screen bg-[#08090c] text-white flex items-center justify-center">
+        <div className="text-zinc-400">Verificando sua sessão...</div>
+      </main>
+    );
+  }
+
+  if (!user) {
+    if (typeof window !== "undefined") window.location.replace("/login");
+    return (
+      <main className="min-h-screen bg-[#08090c] text-white flex items-center justify-center">
+        <div className="text-zinc-400">Redirecionando para o login...</div>
+      </main>
+    );
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-[#08090c] text-white flex items-center justify-center">
@@ -637,14 +691,24 @@ export default function Home() {
             </p>
           </div>
 
-          <button
-            onClick={() =>
-              loadDashboard()
-            }
-            className="px-5 py-2.5 rounded-xl bg-white text-black font-semibold hover:bg-zinc-200 transition"
-          >
-            Atualizar
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="hidden sm:block text-right">
+              <div className="text-xs text-zinc-500">Conta conectada</div>
+              <div className="text-sm text-zinc-300 max-w-[240px] truncate">{user.email}</div>
+            </div>
+            <button
+              onClick={() => loadDashboard()}
+              className="px-5 py-2.5 rounded-xl bg-white text-black font-semibold hover:bg-zinc-200 transition"
+            >
+              Atualizar
+            </button>
+            <button
+              onClick={signOut}
+              className="px-4 py-2.5 rounded-xl bg-white/5 text-zinc-300 font-semibold hover:bg-white/10 transition"
+            >
+              Sair
+            </button>
+          </div>
 
         </header>
 
