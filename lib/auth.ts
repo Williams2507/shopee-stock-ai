@@ -1,7 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { NextRequest } from "next/server";
 
-export async function requireUser(request: NextRequest) {
+export async function requireUser(request: Request) {
   const authHeader = request.headers.get("authorization");
 
   if (!authHeader?.startsWith("Bearer ")) {
