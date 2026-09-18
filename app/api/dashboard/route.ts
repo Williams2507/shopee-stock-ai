@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {
+    const user = await requireUser(request);
+
     const { searchParams } = new URL(request.url);
 
     const period = Number(
@@ -31,8 +34,8 @@ export async function GET(request: Request) {
         .select(
           "id, shop_id, shop_name, lead_time_days, safety_days"
         )
-        .eq("shop_id", 227703795)
-        .single();
+        .eq("user_id", user.id)
+        .maybeSingle();
 
     if (storeError || !store) {
       return NextResponse.json(
@@ -1297,6 +1300,19 @@ export async function GET(request: Request) {
       "Erro carregando dashboard:",
       error
     );
+
+    if (
+      error instanceof Error &&
+      error.message === "UNAUTHORIZED"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Não autorizado.",
+        },
+        { status: 401 }
+      );
+    }
 
     return NextResponse.json(
       {

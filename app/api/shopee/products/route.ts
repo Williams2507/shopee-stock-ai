@@ -1,26 +1,30 @@
 import { NextResponse } from "next/server";
 
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth";
 import { syncProducts } from "@/lib/shopee/sync-products";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { data: store, error } =
+    const user = await requireUser(request);
+
+    const { data: store, error: storeError } =
       await supabaseAdmin
         .from("stores")
         .select("*")
-        .eq("shop_id", 227703795)
-        .single();
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    if (error || !store) {
+    if (storeError) throw storeError;
+
+    if (!store) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Loja não encontrada.",
-        },
+        { success: false, error: "Loja não encontrada." },
         { status: 404 }
       );
     }
+
+
 
     const result =
       await syncProducts(store);
@@ -34,6 +38,13 @@ export async function GET() {
       ...result,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json(
+        { success: false, error: "Não autorizado." },
+        { status: 401 }
+      );
+    }
+
     console.error(
       "Erro sincronizando produtos:",
       error

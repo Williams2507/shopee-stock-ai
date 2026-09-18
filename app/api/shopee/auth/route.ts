@@ -1,7 +1,10 @@
-    import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { requireUser } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
+  try {
+    await requireUser(request);
   const partnerId = process.env.SHOPEE_PARTNER_ID;
   const partnerKey = process.env.SHOPEE_PARTNER_KEY;
   const redirectUrl = process.env.SHOPEE_REDIRECT_URL;
@@ -36,4 +39,13 @@ export async function GET() {
   url.searchParams.set("redirect", redirectUrl);
 
   return NextResponse.redirect(url.toString());
+  } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json(
+        { success: false, error: "Não autorizado." },
+        { status: 401 }
+      );
+    }
+    throw error;
+  }
 }

@@ -81,21 +81,38 @@ export async function GET(request: Request) {
       Date.now() + expireIn * 1000
     ).toISOString();
 
-    // 3. Salvar/atualizar a loja no Supabase
+    // 3. Atualizar somente uma loja que já tenha proprietário.
+    // A associação de uma NOVA loja ao usuário será feita com state assinado
+    // no próximo passo do fluxo OAuth.
+    const { data: existingStore, error: existingStoreError } =
+      await supabaseAdmin
+        .from("stores")
+        .select("id, user_id")
+        .eq("shop_id", Number(shopId))
+        .maybeSingle();
+
+    if (existingStoreError) throw existingStoreError;
+
+    if (!existingStore?.user_id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Esta loja ainda não está vinculada a um usuário. Inicie a conexão pelo painel.",
+        },
+        { status: 403 }
+      );
+    }
+
     const { data: store, error: storeError } = await supabaseAdmin
       .from("stores")
-      .upsert(
-        {
-          shop_id: Number(shopId),
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token,
-          token_expires_at: tokenExpiresAt,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "shop_id",
-        }
-      )
+      .update({
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token,
+        token_expires_at: tokenExpiresAt,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", existingStore.id)
       .select()
       .single();
 

@@ -1,24 +1,29 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { data: store, error: storeError } = await supabaseAdmin
-      .from("stores")
-      .select("*")
-      .eq("shop_id", 227703795)
-      .single();
+    const user = await requireUser(request);
 
-    if (storeError || !store) {
+    const { data: store, error: storeError } =
+      await supabaseAdmin
+        .from("stores")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+    if (storeError) throw storeError;
+
+    if (!store) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Loja não encontrada no Supabase.",
-        },
+        { success: false, error: "Loja não encontrada." },
         { status: 404 }
       );
     }
+
+
 
     const partnerId = process.env.SHOPEE_PARTNER_ID;
     const partnerKey = process.env.SHOPEE_PARTNER_KEY;
@@ -69,6 +74,13 @@ export async function GET() {
       shopeeResponse: data,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json(
+        { success: false, error: "Não autorizado." },
+        { status: 401 }
+      );
+    }
+
     console.error("Erro ao testar Shopee:", error);
 
     return NextResponse.json(

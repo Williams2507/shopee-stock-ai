@@ -147,6 +147,31 @@ export default function Home() {
   const [savingStockSettings, setSavingStockSettings] =
     useState(false);
 
+  async function authFetch(
+    input: RequestInfo | URL,
+    init: RequestInit = {}
+  ) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      window.location.replace("/login");
+      throw new Error("Sessão expirada. Entre novamente.");
+    }
+
+    const headers = new Headers(init.headers);
+    headers.set(
+      "Authorization",
+      `Bearer ${session.access_token}`
+    );
+
+    return fetch(input, {
+      ...init,
+      headers,
+    });
+  }
+
   async function loadDashboard(
     selectedPeriod = period
   ) {
@@ -154,7 +179,7 @@ export default function Home() {
       setLoading(true);
       setError("");
 
-      const response = await fetch(
+      const response = await authFetch(
         `/api/dashboard?period=${selectedPeriod}`,
         {
           cache: "no-store",
@@ -221,7 +246,7 @@ export default function Home() {
       setReviewsLoading(true);
       setReviewsMessage("");
 
-      const response = await fetch(
+      const response = await authFetch(
         "/api/reviews",
         {
           cache: "no-store",
@@ -254,7 +279,7 @@ export default function Home() {
       setReviewsLoading(true);
       setReviewsMessage("Sincronizando avaliações...");
 
-      const response = await fetch(
+      const response = await authFetch(
         "/api/shopee/reviews",
         {
           cache: "no-store",
@@ -290,7 +315,7 @@ export default function Home() {
       setReviewsLoading(true);
       setReviewsMessage("Criando avaliação de teste...");
 
-      const response = await fetch("/api/reviews/test", {
+      const response = await authFetch("/api/reviews/test", {
         method: "POST",
       });
 
@@ -320,7 +345,7 @@ export default function Home() {
       setReviewsLoading(true);
       setReviewsMessage("Preparando respostas...");
 
-      const response = await fetch(
+      const response = await authFetch(
         "/api/reviews/generate",
         {
           method: "POST",
@@ -356,7 +381,7 @@ export default function Home() {
     responseText: string
   ) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         "/api/reviews/edit",
         {
           method: "POST",
@@ -405,7 +430,7 @@ export default function Home() {
       setReviewsLoading(true);
       setReviewsMessage("Excluindo avaliação de teste...");
 
-      const response = await fetch("/api/reviews/test/delete", {
+      const response = await authFetch("/api/reviews/test/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reviewId }),
@@ -437,7 +462,7 @@ export default function Home() {
       setSendingReview(reviewId);
       setReviewsMessage("");
 
-      const response = await fetch(
+      const response = await authFetch(
         "/api/reviews/send",
         {
           method: "POST",
@@ -492,7 +517,7 @@ export default function Home() {
       setSavingMinimum(variationId);
       setStockMessage("");
 
-      const response = await fetch("/api/stock/minimum", {
+      const response = await authFetch("/api/stock/minimum", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -536,7 +561,7 @@ export default function Home() {
       setSavingStockSettings(true);
       setStockMessage("");
 
-      const response = await fetch("/api/stock/settings", {
+      const response = await authFetch("/api/stock/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ leadTimeDays, safetyDays }),

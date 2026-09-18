@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -36,12 +37,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const user = await requireUser(request);
+
     const { data: store, error: storeError } =
       await supabaseAdmin
         .from("stores")
         .select("id")
-        .eq("shop_id", 227703795)
-        .single();
+        .eq("user_id", user.id)
+        .maybeSingle();
 
     if (storeError || !store) {
       return NextResponse.json(
@@ -81,6 +84,16 @@ export async function POST(request: Request) {
         "Configurações de reposição atualizadas!",
     });
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "UNAUTHORIZED"
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Não autorizado." },
+        { status: 401 }
+      );
+    }
+
     console.error(
       "Erro atualizando configurações de estoque:",
       error

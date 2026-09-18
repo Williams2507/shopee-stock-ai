@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth";
 import { refreshShopeeToken } from "@/lib/shopee/refresh-token";
 
 const SHOPEE_HOST =
@@ -9,6 +10,27 @@ const SHOPEE_HOST =
 
 export async function POST(request: Request) {
   try {
+    const user = await requireUser(request);
+
+    const { data: store, error: storeError } =
+      await supabaseAdmin
+        .from("stores")
+        .select("id, shop_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+    if (storeError) throw storeError;
+
+    if (!store) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Loja não encontrada para este usuário.",
+        },
+        { status: 404 }
+      );
+    }
+
     const body = await request.json();
     const reviewId = body.reviewId;
 
@@ -28,6 +50,7 @@ export async function POST(request: Request) {
         .from("reviews")
         .select("*")
         .eq("id", reviewId)
+        .eq("store_id", store.id)
         .single();
 
     if (reviewError || !review) {
@@ -81,14 +104,15 @@ export async function POST(request: Request) {
     }
 
     // Busca a loja
-    const { data: store, error: storeError } =
+    const { data: shopeeStore, error: shopeeStoreError } =
       await supabaseAdmin
         .from("stores")
         .select("*")
         .eq("id", review.store_id)
+        .eq("user_id", user.id)
         .single();
 
-    if (storeError || !store) {
+    if (shopeeStoreError || !shopeeStore) {
       return NextResponse.json(
         {
           success: false,
@@ -102,11 +126,11 @@ export async function POST(request: Request) {
     // RENOVA TOKEN SE ESTIVER EXPIRADO OU PERTO DE EXPIRAR
     // =====================================================
 
-    let currentStore = store;
+    let currentStore = shopeeStore;
 
-    if (store.token_expires_at) {
+    if (shopeeStore.token_expires_at) {
       const expiresAt =
-        new Date(store.token_expires_at).getTime();
+        new Date(shopeeStore.token_expires_at).getTime();
 
       const now = Date.now();
 
@@ -115,14 +139,14 @@ export async function POST(request: Request) {
 
       if (expiresAt - now <= fiveMinutes) {
         console.log(
-          `Token da loja ${store.shop_id} expirado/próximo de expirar. Renovando...`
+          `Token da loja ${shopeeStore.shop_id} expirado/próximo de expirar. Renovando...`
         );
 
         const refreshed =
-          await refreshShopeeToken(store);
+          await refreshShopeeToken(shopeeStore);
 
         currentStore = {
-          ...store,
+          ...shopeeStore,
           access_token:
             refreshed.accessToken,
           refresh_token:
@@ -132,7 +156,7 @@ export async function POST(request: Request) {
         };
 
         console.log(
-          `Token da loja ${store.shop_id} renovado com sucesso.`
+          `Token da loja ${shopeeStore.shop_id} renovado com sucesso.`
         );
       }
     }
@@ -318,6 +342,16 @@ if (!response.ok || data.error || failedResult) {
         review.shopee_review_id,
     });
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "UNAUTHORIZED"
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Não autorizado." },
+        { status: 401 }
+      );
+    }
+
     console.error(
       "Erro enviando resposta:",
       error
