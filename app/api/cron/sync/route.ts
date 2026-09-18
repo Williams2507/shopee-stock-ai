@@ -5,31 +5,26 @@ import { syncOrders } from "@/lib/shopee/sync-orders";
 
 export async function GET(request: Request) {
   try {
-    // Proteção básica do endpoint
-    const authHeader =
-    request.headers.get("authorization");
+    const authHeader = request.headers.get("authorization");
+    const cronSecret = process.env.CRON_SECRET;
 
-    const cronSecret =
-    process.env.CRON_SECRET;
-
-    if (
-    cronSecret &&
-    authHeader !== `Bearer ${cronSecret}`
-    ) {
-    return NextResponse.json(
+    // Em produção, a ausência do segredo também deve bloquear o endpoint.
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json(
         {
-        success: false,
-        error: "Não autorizado.",
+          success: false,
+          error: "Não autorizado.",
         },
         { status: 401 }
-    );
+      );
     }
 
-    // Busca todas as lojas conectadas
+    // Sincroniza somente lojas vinculadas a um usuário.
     const { data: stores, error } =
       await supabaseAdmin
         .from("stores")
-        .select("*");
+        .select("*")
+        .not("user_id", "is", null);
 
     if (error) {
       throw error;
@@ -47,13 +42,8 @@ export async function GET(request: Request) {
 
     for (const store of stores) {
       try {
-        // Sincroniza produtos e estoque
-        const products =
-          await syncProducts(store);
-
-        // Sincroniza pedidos
-        const orders =
-          await syncOrders(store);
+        const products = await syncProducts(store);
+        const orders = await syncOrders(store);
 
         results.push({
           shopId: store.shop_id,
@@ -85,10 +75,7 @@ export async function GET(request: Request) {
       results,
     });
   } catch (error) {
-    console.error(
-      "Erro no cron:",
-      error
-    );
+    console.error("Erro no cron:", error);
 
     return NextResponse.json(
       {

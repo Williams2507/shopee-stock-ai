@@ -1,17 +1,31 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Busca nossa loja de teste
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Endpoint de teste desativado em produção.",
+        },
+        { status: 404 }
+      );
+    }
+
+    const user = await requireUser(request);
+
     const { data: store, error: storeError } =
       await supabaseAdmin
         .from("stores")
         .select("id, shop_id, shop_name")
-        .eq("shop_id", 227703795)
-        .single();
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    if (storeError || !store) {
+    if (storeError) throw storeError;
+
+    if (!store) {
       return NextResponse.json(
         {
           success: false,
@@ -21,7 +35,6 @@ export async function GET() {
       );
     }
 
-    // Cria um produto fictício
     const { data: product, error: productError } =
       await supabaseAdmin
         .from("products")
@@ -54,7 +67,6 @@ export async function GET() {
       );
     }
 
-    // Cria uma variação
     const { data: variation, error: variationError } =
       await supabaseAdmin
         .from("product_variations")
@@ -110,6 +122,16 @@ export async function GET() {
       },
     });
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "UNAUTHORIZED"
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Não autorizado." },
+        { status: 401 }
+      );
+    }
+
     console.error("Erro no seed:", error);
 
     return NextResponse.json(
