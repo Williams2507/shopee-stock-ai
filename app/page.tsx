@@ -3335,67 +3335,252 @@ function formatStockDate(value: string) {
 
 function StockHistorySection({ data }: { data: DashboardData }) {
   const withHistory = data.variations
-    .filter((variation) => Array.isArray(variation.stock_history) && variation.stock_history.length > 0)
-    .slice(0, 6);
+    .filter(
+      (variation) =>
+        Array.isArray(variation.stock_history) &&
+        variation.stock_history.length > 0
+    )
+    .slice(0, 8);
+
+  const rows = withHistory.map((variation) => {
+    const product = data.products.find(
+      (item) => item.id === variation.product_id
+    );
+    const history = variation.stock_history || [];
+    const first = Number(history[0]?.stock || 0);
+    const current = Number(variation.stock || 0);
+    const minStock = Number(variation.min_stock || 0);
+    const change = current - first;
+    const pct = first > 0 ? (change / first) * 100 : 0;
+
+    return {
+      variation,
+      product,
+      history,
+      first,
+      current,
+      minStock,
+      change,
+      pct,
+    };
+  });
+
+  const totalCurrent = rows.reduce((sum, row) => sum + row.current, 0);
+  const belowMinimum = rows.filter(
+    (row) => row.minStock > 0 && row.current < row.minStock
+  ).length;
+  const falling = rows.filter((row) => row.change < 0).length;
 
   return (
-    <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg overflow-hidden">
-      <div className="p-5 border-b border-[#E2E8F0]">
-        <h3 className="font-semibold text-lg">Histórico de estoque</h3>
-        <p className="text-sm text-[#64748B] mt-1">
-          Evolução do saldo disponível por SKU nos últimos 30 dias.
-        </p>
+    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <div>
+          <h3 className="font-semibold text-lg text-slate-900">
+            Histórico de estoque
+          </h3>
+          <p className="text-sm text-slate-500 mt-1">
+            Variação do saldo por SKU nos últimos 30 dias.
+          </p>
+        </div>
+
+        {rows.length > 0 && (
+          <div className="flex flex-wrap gap-2 text-xs">
+            <span className="px-3 py-1.5 border border-slate-200 rounded-md bg-slate-50 text-slate-600">
+              {totalCurrent} un. monitoradas
+            </span>
+            <span className="px-3 py-1.5 border border-slate-200 rounded-md bg-slate-50 text-slate-600">
+              {falling} em queda
+            </span>
+            <span className="px-3 py-1.5 border border-orange-200 rounded-md bg-orange-50 text-orange-700">
+              {belowMinimum} abaixo do mínimo
+            </span>
+          </div>
+        )}
       </div>
 
-      {withHistory.length ? (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 p-5">
-          {withHistory.map((variation) => {
-            const product = data.products.find((item) => item.id === variation.product_id);
-            const history = variation.stock_history || [];
-            const values = history.map((entry: any) => Number(entry.stock || 0));
-            const max = Math.max(...values, 1);
-            const min = Math.min(...values, 0);
-            const range = Math.max(max - min, 1);
-            const points = history
-              .map((entry: any, index: number) => {
-                const x = history.length === 1 ? 50 : (index / (history.length - 1)) * 100;
-                const y = 90 - ((Number(entry.stock || 0) - min) / range) * 75;
-                return `${x},${y}`;
-              })
-              .join(" ");
+      {rows.length ? (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[920px]">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-left">
+                <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Produto / SKU
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Estoque atual
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Mínimo
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Variação 30d
+                </th>
+                <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide w-[320px]">
+                  Tendência
+                </th>
+                <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Situação
+                </th>
+              </tr>
+            </thead>
 
-            return (
-              <div key={variation.id} className="rounded-md bg-white border border-slate-200 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-sm">{product?.name || "Produto"}</p>
-                    <p className="text-xs text-[#64748B] mt-1">{variation.name}</p>
-                  </div>
-                  <span className="text-xs text-[#475569]">{Number(variation.stock || 0)} un.</span>
-                </div>
-                <div className="h-32 mt-4">
-                  <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
-                    <line x1="0" y1="90" x2="100" y2="90" stroke="currentColor" className="text-slate-900/10" strokeWidth="1" />
-                    {history.length > 1 ? (
-                      <polyline points={points} fill="none" stroke="currentColor" className="text-slate-900" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-                    ) : (
-                      <circle cx="50" cy="50" r="2.5" fill="currentColor" className="text-slate-900" />
-                    )}
-                  </svg>
-                </div>
-                <div className="flex justify-between text-[11px] text-[#64748B] mt-2">
-                  <span>{history[0]?.snapshot_date ? formatStockDate(history[0].snapshot_date) : "-"}</span>
-                  <span>{history.at(-1)?.snapshot_date ? formatStockDate(history.at(-1).snapshot_date) : "-"}</span>
-                </div>
-              </div>
-            );
-          })}
+            <tbody className="divide-y divide-slate-200">
+              {rows.map(
+                ({
+                  variation,
+                  product,
+                  history,
+                  first,
+                  current,
+                  minStock,
+                  change,
+                  pct,
+                }) => {
+                  const values = history.map((entry: any) =>
+                    Number(entry.stock || 0)
+                  );
+                  const max = Math.max(...values, current, 1);
+                  const min = Math.min(...values, current, 0);
+                  const range = Math.max(max - min, 1);
+
+                  const points = history
+                    .map((entry: any, index: number) => {
+                      const x =
+                        history.length === 1
+                          ? 50
+                          : 2 + (index / (history.length - 1)) * 96;
+                      const y =
+                        42 -
+                        ((Number(entry.stock || 0) - min) / range) * 32;
+                      return `${x},${y}`;
+                    })
+                    .join(" ");
+
+                  const priority = businessPriority(current, minStock);
+                  const isDown = change < 0;
+                  const isUp = change > 0;
+
+                  return (
+                    <tr
+                      key={variation.id}
+                      className="hover:bg-slate-50/70 transition-colors"
+                    >
+                      <td className="px-5 py-4">
+                        <div className="font-medium text-sm text-slate-900 max-w-[360px] truncate">
+                          {product?.name || "Produto"}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          {variation.name}
+                          {variation.sku ? ` · ${variation.sku}` : ""}
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <div className="text-sm font-semibold text-slate-900">
+                          {current} un.
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-4 text-sm text-slate-600">
+                        {minStock > 0 ? `${minStock} un.` : "—"}
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <div
+                          className={`text-sm font-semibold ${
+                            isDown
+                              ? "text-red-600"
+                              : isUp
+                              ? "text-emerald-600"
+                              : "text-slate-600"
+                          }`}
+                        >
+                          {change > 0 ? "+" : ""}
+                          {change} un.
+                        </div>
+                        <div className="text-xs text-slate-400 mt-0.5">
+                          {first > 0
+                            ? `${pct > 0 ? "+" : ""}${pct.toFixed(0)}%`
+                            : "sem base"}
+                        </div>
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <svg
+                          viewBox="0 0 100 48"
+                          preserveAspectRatio="none"
+                          className="w-full h-12"
+                          aria-label="Tendência do estoque"
+                        >
+                          <line
+                            x1="0"
+                            y1="43"
+                            x2="100"
+                            y2="43"
+                            stroke="#E2E8F0"
+                            strokeWidth="1"
+                            vectorEffect="non-scaling-stroke"
+                          />
+                          {history.length > 1 ? (
+                            <polyline
+                              points={points}
+                              fill="none"
+                              stroke={
+                                priority.label === "Crítica"
+                                  ? "#DC2626"
+                                  : priority.label === "Alta"
+                                  ? "#EA580C"
+                                  : "#475569"
+                              }
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              vectorEffect="non-scaling-stroke"
+                            />
+                          ) : (
+                            <circle
+                              cx="50"
+                              cy="24"
+                              r="2.5"
+                              fill="#475569"
+                            />
+                          )}
+                        </svg>
+                        <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                          <span>
+                            {history[0]?.snapshot_date
+                              ? formatStockDate(history[0].snapshot_date)
+                              : "-"}
+                          </span>
+                          <span>
+                            {history.at(-1)?.snapshot_date
+                              ? formatStockDate(history.at(-1).snapshot_date)
+                              : "-"}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-flex px-2.5 py-1 rounded-md border text-xs font-semibold ${priority.badge}`}
+                        >
+                          {priority.label}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                }
+              )}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="py-12 px-6 text-center">
-          <p className="font-medium">Histórico começando agora</p>
-          <p className="text-sm text-[#64748B] mt-1">
-            Depois da primeira sincronização com a nova versão, o sistema começa a registrar um ponto de estoque por dia.
+          <p className="font-medium text-slate-900">
+            Histórico ainda não disponível
+          </p>
+          <p className="text-sm text-slate-500 mt-1">
+            Os registros serão exibidos após as próximas sincronizações de estoque.
           </p>
         </div>
       )}
