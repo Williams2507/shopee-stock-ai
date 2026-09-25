@@ -764,7 +764,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
       <div className="min-h-screen lg:grid lg:grid-cols-[250px_minmax(0,1fr)]">
-        <aside className="hidden lg:flex lg:flex-col border-r border-[#E2E8F0] bg-[#FFFFFF] px-4 py-6">
+        <aside className="hidden lg:flex lg:flex-col border-r border-[#E2E8F0] bg-[#FFFFFF] px-4 py-6 sticky top-0 h-screen shrink-0 overflow-y-auto self-start">
           <div className="flex items-center gap-3 px-3 mb-8">
             <div className="h-11 w-11 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 text-slate-900 grid place-items-center font-bold shadow-sm shadow-orange-200">
               S
