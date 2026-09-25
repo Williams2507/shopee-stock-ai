@@ -751,757 +751,484 @@ export default function Home() {
     Boolean(variation.risk_before_arrival)
   ).length;
 
+  const firstName =
+    user.email?.split("@")[0]?.split(/[._-]/)[0] || "vendedor";
+
+  const navItems = [
+    { id: "dashboard" as const, label: "Dashboard", icon: "⌂" },
+    { id: "sales" as const, label: "Vendas", icon: "▥" },
+    { id: "purchases" as const, label: "Compras / Reposição", icon: "▣" },
+    { id: "reviews" as const, label: "Avaliações", icon: "☆" },
+  ];
+
   return (
-    <main className="min-h-screen bg-[#08090c] text-white">
-      <div className="w-full px-6 lg:px-8 py-8">
-
-        {/* HEADER */}
-
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-5 mb-8">
-
-          <div>
-            <p className="text-sm text-zinc-500 mb-1">
-              Shopee Stock AI
-            </p>
-
-            <h1 className="text-3xl font-bold">
-              Dashboard
-            </h1>
-
-            <p className="text-zinc-500 mt-1">
-              Visão geral da sua operação
-            </p>
+    <main className="min-h-screen bg-[#f7f8fb] text-slate-900">
+      <div className="min-h-screen lg:grid lg:grid-cols-[250px_minmax(0,1fr)]">
+        <aside className="hidden lg:flex lg:flex-col border-r border-orange-100 bg-white px-4 py-6">
+          <div className="flex items-center gap-3 px-3 mb-8">
+            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-white grid place-items-center font-black shadow-lg shadow-orange-200">
+              S
+            </div>
+            <div>
+              <div className="font-extrabold text-orange-600 leading-tight">Shopee Stock AI</div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Gestão inteligente</div>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="hidden sm:block text-right">
-              <div className="text-xs text-zinc-500">Conta conectada</div>
-              <div className="text-sm text-zinc-300 max-w-[240px] truncate">{user.email}</div>
-            </div>
-            <button
-              onClick={connectShopee}
-              disabled={connectingShopee}
-              className="px-4 py-2.5 rounded-xl bg-orange-500/10 text-orange-400 font-semibold hover:bg-orange-500/20 disabled:opacity-50 transition"
-            >
-              {connectingShopee ? "Conectando..." : "Conectar Shopee"}
-            </button>
-            <button
-              onClick={() => loadDashboard()}
-              className="px-5 py-2.5 rounded-xl bg-white text-black font-semibold hover:bg-zinc-200 transition"
-            >
-              Atualizar
-            </button>
+          <nav className="space-y-2">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  if (item.id === "reviews") loadReviews();
+                }}
+                className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-left transition ${
+                  activeTab === item.id
+                    ? "bg-gradient-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-100"
+                    : "text-slate-500 hover:bg-orange-50 hover:text-orange-600"
+                }`}
+              >
+                <span className="text-lg w-5 text-center">{item.icon}</span>
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="mt-auto pt-6 border-t border-slate-100">
             <button
               onClick={signOut}
-              className="px-4 py-2.5 rounded-xl bg-white/5 text-zinc-300 font-semibold hover:bg-white/10 transition"
+              className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-500 hover:bg-slate-50"
             >
+              <span className="text-lg">↪</span>
               Sair
             </button>
           </div>
+        </aside>
 
-        </header>
-
-        {/* NAVEGAÇÃO */}
-
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() =>
-              setActiveTab("dashboard")
-            }
-            className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
-              activeTab === "dashboard"
-                ? "bg-white text-black"
-                : "bg-white/5 text-zinc-400 hover:bg-white/10"
-            }`}
-          >
-            Dashboard
-          </button>
-
-          <button
-            onClick={() =>
-              setActiveTab("sales")
-            }
-            className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
-              activeTab === "sales"
-                ? "bg-white text-black"
-                : "bg-white/5 text-zinc-400 hover:bg-white/10"
-            }`}
-          >
-            Vendas
-          </button>
-
-          <button
-            onClick={() =>
-              setActiveTab("purchases")
-            }
-            className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
-              activeTab === "purchases"
-                ? "bg-white text-black"
-                : "bg-white/5 text-zinc-400 hover:bg-white/10"
-            }`}
-          >
-            Compras / Reposição
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab("reviews");
-              loadReviews();
-            }}
-            className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
-              activeTab === "reviews"
-                ? "bg-white text-black"
-                : "bg-white/5 text-zinc-400 hover:bg-white/10"
-            }`}
-          >
-            Avaliações
-          </button>
-        </div>
-
-        {activeTab === "reviews" ? (
-          <ReviewsSection
-            reviews={reviews}
-            loading={reviewsLoading}
-            message={reviewsMessage}
-            editingReview={editingReview}
-            sendingReview={sendingReview}
-            setEditingReview={setEditingReview}
-            onSync={syncReviews}
-            onGenerate={generateReviewResponses}
-            onSave={saveReviewResponse}
-            onSend={sendReview}
-            onCreateTest={createTestReview}
-            onDeleteTest={deleteTestReview}
-          />
-        ) : activeTab === "sales" ? (
-          <SalesSection
-            data={data}
-            money={money}
-            period={period}
-            setPeriod={setPeriod}
-          />
-        ) : activeTab === "purchases" ? (
-          <PurchasesSection
-            data={data}
-            purchaseItems={purchaseItems}
-            money={money}
-          />
-          ) : (
-            <>
-
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-
-          <MetricCard
-            title="Produtos"
-            value={metrics.products.toString()}
-            subtitle="Produtos cadastrados"
-          />
-
-          <MetricCard
-            title="Estoque"
-            value={metrics.totalStock.toString()}
-            subtitle="Unidades disponíveis"
-          />
-
-          <MetricCard
-            title="Valor do estoque"
-            value={money(
-              metrics.inventoryValue
-            )}
-            subtitle="Custo dos produtos"
-          />
-
-          <MetricCard
-            title="Lucro potencial"
-            value={money(
-              metrics.potentialProfit
-            )}
-            subtitle="Se todo estoque vender"
-          />
-
-        </section>
-
-        {/* PERFORMANCE */}
-
-        <section className="bg-[#101116] border border-white/5 rounded-2xl p-6 mb-6">
-
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-
-            <div>
-              <h2 className="text-xl font-semibold">
-                Performance
-              </h2>
-
-              <p className="text-sm text-zinc-500 mt-1">
-                Desempenho das vendas no período
-              </p>
-            </div>
-
-            <div className="flex gap-2">
-
-              {[1, 7, 30, 90].map(
-                (value) => (
-                  <button
-                    key={value}
-                    onClick={() =>
-                      setPeriod(value)
-                    }
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                      period === value
-                        ? "bg-white text-black"
-                        : "bg-white/5 text-zinc-400 hover:bg-white/10"
-                    }`}
-                  >
-                    {value === 1
-                      ? "Hoje"
-                      : `${value} dias`}
-                  </button>
-                )
-              )}
-
-            </div>
-
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-
-            <PerformanceCard
-              title="Faturamento"
-              value={money(
-                metrics.revenue
-              )}
-            />
-
-            <PerformanceCard
-              title="Pedidos"
-              value={metrics.orders.toString()}
-            />
-
-            <PerformanceCard
-              title="Unidades vendidas"
-              value={metrics.unitsSold.toString()}
-            />
-
-            <PerformanceCard
-              title="Lucro"
-              value={money(
-                metrics.grossProfit
-              )}
-            />
-
-            <PerformanceCard
-              title="Margem"
-              value={`${metrics.margin.toFixed(
-                1
-              )}%`}
-            />
-
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-
-            <div className="bg-white/[0.03] rounded-xl p-4">
-              <p className="text-xs text-zinc-500">
-                Ticket médio
-              </p>
-
-              <p className="text-xl font-bold mt-1">
-                {money(
-                  metrics.averageOrderValue
-                )}
-              </p>
-            </div>
-
-            <div className="bg-white/[0.03] rounded-xl p-4">
-              <p className="text-xs text-zinc-500">
-                Custo dos produtos
-              </p>
-
-              <p className="text-xl font-bold mt-1">
-                {money(
-                  metrics.productCost
-                )}
-              </p>
-            </div>
-
-          </div>
-
-        </section>
-
-        {/* CENTRAL DE ALERTAS */}
-
-        <AlertsCenter
-          data={data}
-        />
-
-        {/* PAINEL EXECUTIVO */}
-
-        <ExecutiveInsights
-          data={data}
-          money={money}
-        />
-
-        {/* PREVISÃO DE DEMANDA */}
-
-        <DemandForecastSection
-          data={data}
-        />
-
-        {/* HISTÓRICO E TENDÊNCIA */}
-
-        <StockTrendSection
-          data={data}
-        />
-
-        {/* SAÚDE DO ESTOQUE */}
-
-        <StockHealthSection
-          data={data}
-          money={money}
-        />
-
-        {/* CONFIGURAÇÃO DE REPOSIÇÃO */}
-
-        <StockSettingsCard
-          leadTimeDays={Number(data.stockSettings?.leadTimeDays ?? 14)}
-          safetyDays={Number(data.stockSettings?.safetyDays ?? 7)}
-          saving={savingStockSettings}
-          onSave={saveStockSettings}
-        />
-
-        {/* ESTOQUE + ALERTAS */}
-
-        <section className="grid grid-cols-1 xl:grid-cols-[minmax(0,3fr)_minmax(320px,1fr)] gap-6">
-
-          <div className="min-w-0 bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">
-
-            <div className="p-5 border-b border-white/5">
-
-              <h2 className="font-semibold text-lg">
-                Estoque
-              </h2>
-
-              <p className="text-sm text-zinc-500">
-                Previsão de compra baseada nos últimos {Number(data.stockSettings?.forecastDays ?? 30)} dias
-              </p>
-
-              <div className="flex flex-wrap gap-2 mt-4">
-                <span className="inline-flex px-3 py-1.5 rounded-lg bg-white/5 text-xs text-zinc-300">
-                  {purchaseItems.length} item(ns) para comprar
-                </span>
-
-                <span className="inline-flex px-3 py-1.5 rounded-lg bg-red-500/10 text-xs font-semibold text-red-400">
-                  {totalSuggestedPurchase} un. sugeridas
-                </span>
-
-                {riskItems > 0 && (
-                  <span className="inline-flex px-3 py-1.5 rounded-lg bg-orange-500/10 text-xs font-semibold text-orange-400">
-                    {riskItems} com risco antes da chegada
-                  </span>
-                )}
+        <div className="min-w-0">
+          <header className="sticky top-0 z-20 border-b border-slate-100 bg-white/90 backdrop-blur px-4 md:px-7 py-4">
+            <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="lg:hidden h-10 w-10 shrink-0 rounded-xl bg-orange-500 text-white grid place-items-center font-black">S</div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold">Shopee</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[11px] font-bold">
+                      Conectada
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-400 truncate">{user.email}</div>
+                </div>
               </div>
 
-              {stockMessage && (
-                <p className="text-sm text-zinc-300 mt-3">
-                  {stockMessage}
-                </p>
-              )}
-
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={connectShopee}
+                  disabled={connectingShopee}
+                  className="px-4 py-2.5 rounded-xl border border-orange-200 bg-orange-50 text-orange-600 text-sm font-bold hover:bg-orange-100 disabled:opacity-50 transition"
+                >
+                  {connectingShopee ? "Conectando..." : "Gerenciar conexão"}
+                </button>
+                <button
+                  onClick={() => loadDashboard()}
+                  className="px-4 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-bold hover:bg-orange-600 shadow-lg shadow-orange-100 transition"
+                >
+                  ↻ Atualizar dados
+                </button>
+              </div>
             </div>
 
-            <div className="overflow-x-auto">
-
-              <table className="w-full">
-
-                <thead>
-                  <tr className="text-left text-xs uppercase text-zinc-500 border-b border-white/5">
-
-                    <th className="px-5 py-4">
-                      Produto
-                    </th>
-
-                    <th className="px-5 py-4">
-                      SKU
-                    </th>
-
-                    <th className="px-5 py-4">
-                      Preço
-                    </th>
-
-                    <th className="px-5 py-4">
-                      Custo
-                    </th>
-
-                    <th className="px-5 py-4">
-                      Estoque
-                    </th>
-
-                    <th className="px-5 py-4">
-                      Mínimo
-                    </th>
-
-                    <th className="px-5 py-4">
-                      Cobertura
-                    </th>
-
-                    <th className="px-5 py-4">
-                      Comprar
-                    </th>
-
-                  </tr>
-                </thead>
-
-                <tbody>
-
-                  {stockVariations.length ? (
-
-                    stockVariations.map(
-                      (variation) => {
-
-                        const product =
-                          data.products.find(
-                            (p) =>
-                              p.id ===
-                              variation.product_id
-                          );
-
-                        const stock =
-                          Number(
-                            variation.stock || 0
-                          );
-
-                        const averageDailySales =
-                          Number(
-                            variation.average_daily_sales || 0
-                          );
-
-                        const coverageDays =
-                          variation.days_of_stock === null ||
-                          variation.days_of_stock === undefined
-                            ? null
-                            : Number(variation.days_of_stock);
-
-                        const suggestedPurchase =
-                          Number(
-                            variation.suggested_purchase ??
-                              Math.max(
-                                Number(variation.min_stock ?? 5) -
-                                  stock,
-                                0
-                              )
-                          );
-
-                        return (
-                          <tr
-                            key={variation.id}
-                            className="border-b border-white/5 hover:bg-white/[0.02]"
-                          >
-
-                            <td className="px-5 py-4">
-
-                              <div className="font-medium">
-                                {product?.name ||
-                                  "Produto"}
-                              </div>
-
-                              <div className="text-xs text-zinc-500 mt-1">
-                                {variation.name}
-                              </div>
-
-                            </td>
-
-                            <td className="px-5 py-4 text-sm text-zinc-400">
-                              {variation.sku ||
-                                product?.sku ||
-                                "-"}
-                            </td>
-
-                            <td className="px-5 py-4 text-sm">
-                              {money(
-                                Number(
-                                  variation.price ||
-                                    0
-                                )
-                              )}
-                            </td>
-
-                            <td className="px-5 py-4 text-sm text-zinc-400">
-                              {money(
-                                Number(
-                                  variation.cost ||
-                                    0
-                                )
-                              )}
-                            </td>
-
-                            <td className="px-5 py-4">
-
-                              <span
-                                className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                                  stock <= Number(variation.min_stock ?? 5)
-                                    ? "bg-red-500/10 text-red-400"
-                                    : "bg-green-500/10 text-green-400"
-                                }`}
-                              >
-                                {stock} un.
-                              </span>
-
-                            </td>
-
-                            <td className="px-5 py-4">
-                              <MinimumStockEditor
-                                value={Number(
-                                  variation.min_stock ?? 5
-                                )}
-                                saving={
-                                  savingMinimum === variation.id
-                                }
-                                onSave={(value) =>
-                                  saveMinimumStock(
-                                    variation.id,
-                                    value
-                                  )
-                                }
-                              />
-                            </td>
-
-                            <td className="px-5 py-4 text-sm">
-                              {averageDailySales > 0 &&
-                              coverageDays !== null ? (
-                                <span
-                                  className={
-                                    Boolean(
-                                      variation.risk_before_arrival
-                                    )
-                                      ? "text-red-400 font-semibold"
-                                      : "text-zinc-300"
-                                  }
-                                >
-                                  {coverageDays.toFixed(1)} dias
-                                  {Boolean(variation.risk_before_arrival) && (
-                                    <span className="block text-[10px] uppercase tracking-wide text-red-400 mt-1">
-                                      Risco antes da chegada
-                                    </span>
-                                  )}
-                                </span>
-                              ) : (
-                                <span className="text-zinc-500">
-                                  Sem histórico
-                                </span>
-                              )}
-                            </td>
-
-                            <td className="px-5 py-4">
-                              {suggestedPurchase > 0 ? (
-                                <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400">
-                                  {suggestedPurchase} un.
-                                </span>
-                              ) : (
-                                <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold bg-green-500/10 text-green-400">
-                                  0 un.
-                                </span>
-                              )}
-                            </td>
-
-                          </tr>
-                        );
-                      }
-                    )
-
-                  ) : (
-
-                    <tr>
-                      <td
-                        colSpan={8}
-                        className="px-5 py-12 text-center text-zinc-500"
-                      >
-                        Nenhum produto cadastrado.
-                      </td>
-                    </tr>
-
-                  )}
-
-                </tbody>
-
-              </table>
-
+            <div className="lg:hidden flex gap-2 overflow-x-auto mt-4 pb-1">
+              {navItems.map((item) => (
+                <button
+                  key={`mobile-${item.id}`}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    if (item.id === "reviews") loadReviews();
+                  }}
+                  className={`shrink-0 px-3 py-2 rounded-xl text-xs font-bold ${
+                    activeTab === item.id
+                      ? "bg-orange-500 text-white"
+                      : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
+          </header>
 
-          </div>
+          <div className="p-4 md:p-7">
+            {connectionMessage && (
+              <div className="mb-5 rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm text-orange-700">
+                {connectionMessage}
+              </div>
+            )}
 
-          {/* ALERTAS */}
-
-          <div className="bg-[#101116] border border-white/5 rounded-2xl overflow-hidden">
-
-            <div className="p-5 border-b border-white/5">
-
-              <h2 className="font-semibold text-lg">
-                Alertas
-              </h2>
-
-              <p className="text-sm text-zinc-500 mt-1">
-                O que precisa da sua atenção
-              </p>
-
-            </div>
-
-            <div className="p-5">
-
-              {data.lowStock.length ? (
-
-                <div className="space-y-3">
-
-                  {data.lowStock.map(
-                    (variation) => {
-
-                      const product =
-                        data.products.find(
-                          (p) =>
-                            p.id ===
-                            variation.product_id
-                        );
-
-                      const currentStock = Number(variation.stock || 0);
-                      const minimumStock = Number(variation.min_stock ?? 5);
-                      const leadTimeDays = Number(
-                        variation.lead_time_days ??
-                          data.stockSettings?.leadTimeDays ??
-                          14
-                      );
-                      const safetyDays = Number(
-                        variation.safety_days ??
-                          data.stockSettings?.safetyDays ??
-                          7
-                      );
-                      const averageDailySales = Number(
-                        variation.average_daily_sales || 0
-                      );
-                      const coverageDays =
-                        variation.days_of_stock === null ||
-                        variation.days_of_stock === undefined
-                          ? null
-                          : Number(variation.days_of_stock);
-                      const recommendedStock = Number(
-                        variation.recommended_stock ?? minimumStock
-                      );
-                      const restockSuggestion = Number(
-                        variation.suggested_purchase ??
-                          Math.max(recommendedStock - currentStock, 0)
-                      );
-                      const mayRunOutBeforeArrival =
-                        Boolean(variation.risk_before_arrival);
-
-                      return (
-                        <div
-                          key={variation.id}
-                          className="p-4 rounded-xl bg-red-500/5 border border-red-500/10"
-                        >
-                          <div className="font-medium text-sm">
-                            {product?.name || "Produto"}
-                          </div>
-
-                          <div className="text-xs text-zinc-500 mt-1">
-                            {variation.name}
-                          </div>
-
-                          <div className="mt-3 space-y-1">
-                            <div className="text-xs text-red-400 font-semibold">
-                              Estoque atual: {currentStock} un.
-                            </div>
-
-                            <div className="text-xs text-zinc-400">
-                              Mínimo manual: {minimumStock} un.
-                            </div>
-                          </div>
-
-                          <div className="my-3 border-t border-white/5" />
-
-                          {averageDailySales > 0 ? (
-                            <>
-                              <div className="text-xs text-zinc-300">
-                                Venda média: {averageDailySales.toFixed(2)} un./dia
-                              </div>
-
-                              <div className="text-xs text-zinc-400 mt-1">
-                                Cobertura: {coverageDays?.toFixed(1)} dias
-                              </div>
-
-                              {mayRunOutBeforeArrival && (
-                                <div className="text-xs text-red-400 font-semibold mt-2">
-                                  ⚠ Pode acabar antes da reposição chegar
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <div className="text-xs text-zinc-400">
-                                Venda média: sem histórico
-                              </div>
-
-                              <div className="text-xs text-zinc-500 mt-1">
-                                Cobertura: sem histórico
-                              </div>
-                            </>
-                          )}
-
-                          <div className="my-3 border-t border-white/5" />
-
-                          <div className="text-xs text-zinc-400">
-                            Prazo de reposição: {leadTimeDays} dias
-                          </div>
-
-                          <div className="text-xs text-zinc-400 mt-1">
-                            Margem de segurança: {safetyDays} dias
-                          </div>
-
-                          {averageDailySales > 0 && (
-                            <div className="text-xs text-zinc-300 mt-1">
-                              Estoque recomendado: {recommendedStock} un.
-                            </div>
-                          )}
-
-                          <div className="text-xs text-red-400 mt-2 font-semibold">
-                            Sugestão de compra: {restockSuggestion} un.
-                          </div>
-                        </div>
-                      );
-                    }
-                  )}
-
-                </div>
-
-              ) : (
-
-                <div className="py-10 text-center">
-
-                  <div className="text-3xl mb-3">
-                    ✓
+            {activeTab === "dashboard" && (
+              <>
+                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+                  <div>
+                    <p className="text-sm font-semibold text-orange-500">Painel operacional</p>
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tight mt-1 capitalize">
+                      Olá, {firstName}!
+                    </h1>
+                    <p className="text-slate-500 mt-2">Aqui está o resumo da sua operação na Shopee.</p>
                   </div>
 
-                  <p className="font-medium">
-                    Tudo tranquilo 👍
-                  </p>
-
-                  <p className="text-sm text-zinc-500 mt-1">
-                    Nenhuma variação está com estoque baixo.
-                  </p>
-
+                  <div className="flex gap-2">
+                    {[1, 7, 30, 90].map((value) => (
+                      <button
+                        key={value}
+                        onClick={() => setPeriod(value)}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition ${
+                          period === value
+                            ? "bg-orange-500 border-orange-500 text-white"
+                            : "bg-white border-slate-200 text-slate-500 hover:border-orange-200"
+                        }`}
+                      >
+                        {value === 1 ? "Hoje" : `${value} dias`}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-              )}
+                <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
+                  <LightMetricCard title="Faturamento" value={money(metrics.revenue)} icon="R$" accent="orange" />
+                  <LightMetricCard title="Pedidos" value={metrics.orders.toString()} icon="▣" accent="blue" />
+                  <LightMetricCard title="Itens vendidos" value={metrics.unitsSold.toString()} icon="□" accent="green" />
+                  <LightMetricCard title="Lucro bruto" value={money(metrics.grossProfit)} icon="▥" accent="purple" />
+                </section>
 
-            </div>
+                <section className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+                  <LightMiniCard title="Produtos" value={metrics.products.toString()} />
+                  <LightMiniCard title="Variações" value={metrics.variations.toString()} />
+                  <LightMiniCard title="Estoque total" value={metrics.totalStock.toString()} />
+                  <LightMiniCard title="Valor em estoque" value={money(metrics.inventoryValue)} />
+                </section>
 
+                <section className="grid grid-cols-1 xl:grid-cols-[1.45fr_.85fr] gap-5 mb-6">
+                  <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+                    <div className="flex items-center justify-between gap-3 mb-5">
+                      <div>
+                        <h2 className="font-extrabold text-lg">Performance</h2>
+                        <p className="text-sm text-slate-400">Indicadores do período selecionado</p>
+                      </div>
+                      <span className="text-xs font-bold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-lg">
+                        {period === 1 ? "Hoje" : `${period} dias`}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <LightStat label="Margem" value={`${metrics.margin.toFixed(1)}%`} />
+                      <LightStat label="Ticket médio" value={money(metrics.averageOrderValue)} />
+                      <LightStat label="Custo dos produtos" value={money(metrics.productCost)} />
+                      <LightStat label="Itens para comprar" value={String(purchaseItems.length)} />
+                      <LightStat label="Unidades sugeridas" value={String(totalSuggestedPurchase)} />
+                      <LightStat label="Risco de ruptura" value={String(riskItems)} />
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+                    <h2 className="font-extrabold text-lg">Ações rápidas</h2>
+                    <p className="text-sm text-slate-400 mt-1">Atalhos para sua operação</p>
+
+                    <div className="grid grid-cols-2 gap-3 mt-5">
+                      <QuickAction
+                        title="Conectar Shopee"
+                        subtitle="Gerenciar loja"
+                        className="bg-orange-50 text-orange-600"
+                        onClick={connectShopee}
+                      />
+                      <QuickAction
+                        title="Avaliações"
+                        subtitle="Revisar respostas"
+                        className="bg-blue-50 text-blue-600"
+                        onClick={() => {
+                          setActiveTab("reviews");
+                          loadReviews();
+                        }}
+                      />
+                      <QuickAction
+                        title="Estoque"
+                        subtitle="Ver alertas"
+                        className="bg-emerald-50 text-emerald-600"
+                        onClick={() => document.getElementById("estoque")?.scrollIntoView({ behavior: "smooth" })}
+                      />
+                      <QuickAction
+                        title="Compras"
+                        subtitle="Planejar reposição"
+                        className="bg-violet-50 text-violet-600"
+                        onClick={() => setActiveTab("purchases")}
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                <div className="space-y-5">
+                  <div className="[&>section]:bg-white [&>section]:text-slate-900 [&>section]:border-slate-100 [&>section]:shadow-sm [&_.text-zinc-500]:text-slate-400 [&_.text-zinc-400]:text-slate-500 [&_.text-zinc-300]:text-slate-600">
+                    <AlertsCenter data={data} />
+                    <ExecutiveInsights data={data} money={money} />
+                    <DemandForecastSection data={data} />
+                    <StockTrendSection data={data} />
+                    <StockHealthSection data={data} money={money} />
+                    <StockSettingsCard
+                      leadTimeDays={Number(data.stockSettings?.leadTimeDays ?? 14)}
+                      safetyDays={Number(data.stockSettings?.safetyDays ?? 7)}
+                      saving={savingStockSettings}
+                      onSave={saveStockSettings}
+                    />
+                  </div>
+
+                  <section id="estoque" className="grid grid-cols-1 xl:grid-cols-[minmax(0,3fr)_minmax(320px,1fr)] gap-5">
+                    <div className="min-w-0 bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                      <div className="p-5 border-b border-slate-100">
+                        <h2 className="font-extrabold text-lg">Estoque</h2>
+                        <p className="text-sm text-slate-400 mt-1">
+                          Previsão de compra baseada nos últimos {Number(data.stockSettings?.forecastDays ?? 30)} dias
+                        </p>
+                        <div className="flex flex-wrap gap-2 mt-4">
+                          <span className="px-3 py-1.5 rounded-lg bg-slate-100 text-xs text-slate-600 font-semibold">
+                            {purchaseItems.length} item(ns) para comprar
+                          </span>
+                          <span className="px-3 py-1.5 rounded-lg bg-red-50 text-xs font-bold text-red-500">
+                            {totalSuggestedPurchase} un. sugeridas
+                          </span>
+                          {riskItems > 0 && (
+                            <span className="px-3 py-1.5 rounded-lg bg-orange-50 text-xs font-bold text-orange-600">
+                              {riskItems} com risco antes da chegada
+                            </span>
+                          )}
+                        </div>
+                        {stockMessage && <p className="text-sm text-slate-600 mt-3">{stockMessage}</p>}
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="text-left text-xs uppercase text-slate-400 border-b border-slate-100">
+                              <th className="px-5 py-4">Produto</th>
+                              <th className="px-5 py-4">SKU</th>
+                              <th className="px-5 py-4">Preço</th>
+                              <th className="px-5 py-4">Custo</th>
+                              <th className="px-5 py-4">Estoque</th>
+                              <th className="px-5 py-4">Mínimo</th>
+                              <th className="px-5 py-4">Cobertura</th>
+                              <th className="px-5 py-4">Comprar</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {stockVariations.length ? stockVariations.map((variation) => {
+                              const product = data.products.find((p) => p.id === variation.product_id);
+                              const stock = Number(variation.stock || 0);
+                              const averageDailySales = Number(variation.average_daily_sales || 0);
+                              const coverageDays =
+                                variation.days_of_stock == null ? null : Number(variation.days_of_stock);
+                              const suggestedPurchase = Number(
+                                variation.suggested_purchase ??
+                                  Math.max(Number(variation.min_stock ?? 5) - stock, 0)
+                              );
+
+                              return (
+                                <tr key={variation.id} className="border-b border-slate-100 hover:bg-orange-50/30">
+                                  <td className="px-5 py-4">
+                                    <div className="font-semibold text-sm">{product?.name || "Produto"}</div>
+                                    <div className="text-xs text-slate-400 mt-1">{variation.name}</div>
+                                  </td>
+                                  <td className="px-5 py-4 text-sm text-slate-500">{variation.sku || product?.sku || "-"}</td>
+                                  <td className="px-5 py-4 text-sm">{money(Number(variation.price || 0))}</td>
+                                  <td className="px-5 py-4 text-sm text-slate-500">{money(Number(variation.cost || 0))}</td>
+                                  <td className="px-5 py-4">
+                                    <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-bold ${
+                                      stock <= Number(variation.min_stock ?? 5)
+                                        ? "bg-red-50 text-red-500"
+                                        : "bg-emerald-50 text-emerald-600"
+                                    }`}>
+                                      {stock} un.
+                                    </span>
+                                  </td>
+                                  <td className="px-5 py-4">
+                                    <MinimumStockEditor
+                                      value={Number(variation.min_stock ?? 5)}
+                                      saving={savingMinimum === variation.id}
+                                      onSave={(value) => saveMinimumStock(variation.id, value)}
+                                    />
+                                  </td>
+                                  <td className="px-5 py-4 text-sm">
+                                    {averageDailySales > 0 && coverageDays !== null
+                                      ? `${coverageDays.toFixed(1)} dias`
+                                      : "Sem histórico"}
+                                  </td>
+                                  <td className="px-5 py-4">
+                                    <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-bold ${
+                                      suggestedPurchase > 0
+                                        ? "bg-red-50 text-red-500"
+                                        : "bg-emerald-50 text-emerald-600"
+                                    }`}>
+                                      {suggestedPurchase} un.
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            }) : (
+                              <tr>
+                                <td colSpan={8} className="px-5 py-12 text-center text-slate-400">
+                                  Nenhum produto cadastrado.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                      <div className="p-5 border-b border-slate-100">
+                        <h2 className="font-extrabold text-lg">Produtos com estoque baixo</h2>
+                        <p className="text-sm text-slate-400 mt-1">O que precisa da sua atenção</p>
+                      </div>
+                      <div className="p-5 space-y-3">
+                        {data.lowStock.length ? data.lowStock.slice(0, 8).map((variation) => {
+                          const product = data.products.find((p) => p.id === variation.product_id);
+                          return (
+                            <div key={variation.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-red-50/60">
+                              <div className="min-w-0">
+                                <div className="font-semibold text-sm truncate">{product?.name || "Produto"}</div>
+                                <div className="text-xs text-slate-400 truncate">{variation.name}</div>
+                              </div>
+                              <span className="shrink-0 px-2.5 py-1 rounded-lg bg-white text-red-500 text-xs font-bold">
+                                {Number(variation.stock || 0)} un.
+                              </span>
+                            </div>
+                          );
+                        }) : (
+                          <div className="py-10 text-center">
+                            <div className="h-11 w-11 mx-auto rounded-full bg-emerald-50 text-emerald-600 grid place-items-center font-black">✓</div>
+                            <p className="font-bold mt-3">Tudo tranquilo</p>
+                            <p className="text-sm text-slate-400 mt-1">Nenhum item com estoque baixo.</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </>
+            )}
+
+            {activeTab === "sales" && (
+              <div className="[&>section]:bg-white [&>section]:text-slate-900 [&>section]:border-slate-100 [&_.text-zinc-500]:text-slate-400 [&_.text-zinc-400]:text-slate-500">
+                <SalesSection data={data} money={money} period={period} setPeriod={setPeriod} />
+              </div>
+            )}
+
+            {activeTab === "purchases" && (
+              <div className="[&>section]:bg-white [&>section]:text-slate-900 [&>section]:border-slate-100 [&_.text-zinc-500]:text-slate-400 [&_.text-zinc-400]:text-slate-500">
+                <PurchasesSection data={data} purchaseItems={purchaseItems} money={money} />
+              </div>
+            )}
+
+            {activeTab === "reviews" && (
+              <div className="[&>section]:bg-white [&>section]:text-slate-900 [&>section]:border-slate-100 [&_.text-zinc-500]:text-slate-400 [&_.text-zinc-400]:text-slate-500 [&_.text-zinc-300]:text-slate-600">
+                <ReviewsSection
+                  reviews={reviews}
+                  loading={reviewsLoading}
+                  message={reviewsMessage}
+                  editingReview={editingReview}
+                  sendingReview={sendingReview}
+                  setEditingReview={setEditingReview}
+                  onSync={syncReviews}
+                  onGenerate={generateReviewResponses}
+                  onSave={saveReviewResponse}
+                  onSend={sendReview}
+                  onCreateTest={createTestReview}
+                  onDeleteTest={deleteTestReview}
+                />
+              </div>
+            )}
           </div>
-
-        </section>
-
-            </>
-          )}
+        </div>
       </div>
     </main>
   );
 }
+
+function LightMetricCard({
+  title,
+  value,
+  icon,
+  accent,
+}: {
+  title: string;
+  value: string;
+  icon: string;
+  accent: "orange" | "blue" | "green" | "purple";
+}) {
+  const tones = {
+    orange: "bg-orange-50 text-orange-500",
+    blue: "bg-blue-50 text-blue-500",
+    green: "bg-emerald-50 text-emerald-600",
+    purple: "bg-violet-50 text-violet-600",
+  };
+
+  return (
+    <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-slate-500">{title}</p>
+          <p className="text-2xl font-black tracking-tight mt-3">{value}</p>
+        </div>
+        <div className={`h-11 min-w-11 px-2 rounded-2xl grid place-items-center text-sm font-black ${tones[accent]}`}>
+          {icon}
+        </div>
+      </div>
+      <div className="mt-4 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+        <div className={`h-full w-2/3 rounded-full ${tones[accent].split(" ")[0]}`} />
+      </div>
+    </div>
+  );
+}
+
+function LightMiniCard({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="bg-white border border-slate-100 rounded-2xl px-5 py-4 shadow-sm">
+      <p className="text-xs font-semibold text-slate-400">{title}</p>
+      <p className="text-xl font-black mt-1">{value}</p>
+    </div>
+  );
+}
+
+function LightStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-slate-50 p-4">
+      <p className="text-xs font-semibold text-slate-400">{label}</p>
+      <p className="font-extrabold mt-1">{value}</p>
+    </div>
+  );
+}
+
+function QuickAction({
+  title,
+  subtitle,
+  className,
+  onClick,
+}: {
+  title: string;
+  subtitle: string;
+  className: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-xl p-4 text-left transition hover:-translate-y-0.5 ${className}`}
+    >
+      <div className="font-extrabold text-sm">{title}</div>
+      <div className="text-xs opacity-70 mt-1">{subtitle}</div>
+    </button>
+  );
+}
+
 
 
 function DemandForecastSection({
