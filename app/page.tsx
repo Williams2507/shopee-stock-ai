@@ -634,8 +634,8 @@ export default function Home() {
 
   if (!authReady) {
     return (
-      <main className="min-h-screen bg-[#F6F3EF] text-[#201D1B] flex items-center justify-center">
-        <div className="text-[#665F5A]">Verificando sua sessão...</div>
+      <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex items-center justify-center">
+        <div className="text-[#475569]">Verificando sua sessão...</div>
       </main>
     );
   }
@@ -643,16 +643,16 @@ export default function Home() {
   if (!user) {
     if (typeof window !== "undefined") window.location.replace("/login");
     return (
-      <main className="min-h-screen bg-[#F6F3EF] text-[#201D1B] flex items-center justify-center">
-        <div className="text-[#665F5A]">Redirecionando para o login...</div>
+      <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex items-center justify-center">
+        <div className="text-[#475569]">Redirecionando para o login...</div>
       </main>
     );
   }
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#F6F3EF] text-[#201D1B] flex items-center justify-center">
-        <div className="text-[#665F5A]">
+      <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex items-center justify-center">
+        <div className="text-[#475569]">
           Carregando dashboard...
         </div>
       </main>
@@ -661,17 +661,17 @@ export default function Home() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-[#F6F3EF] text-[#201D1B] p-8">
+      <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A] p-8">
         <div className="max-w-3xl mx-auto">
-          <div className="bg-[#FFFCF9] border border-[#DDD3CA] rounded-2xl p-6">
-            <p className="text-sm text-[#8A817A]">Shopee Stock AI</p>
+          <div className="bg-[#FFFFFF] border border-[#CBD5E1] rounded-2xl p-6">
+            <p className="text-sm text-[#64748B]">Shopee Stock AI</p>
             <h1 className="text-2xl font-bold mt-1">Conecte sua loja Shopee</h1>
-            <p className="text-[#665F5A] mt-3">
+            <p className="text-[#475569] mt-3">
               {error}
             </p>
 
             {connectionMessage && (
-              <p className="text-sm text-red-400 mt-4">
+              <p className="text-sm text-red-600 mt-4">
                 {connectionMessage}
               </p>
             )}
@@ -687,14 +687,14 @@ export default function Home() {
 
               <button
                 onClick={() => loadDashboard()}
-                className="px-5 py-2.5 rounded-xl bg-[#EEE8E2] text-[#4F4945] font-semibold hover:bg-white/10 transition"
+                className="px-5 py-2.5 rounded-xl bg-[#F1F5F9] text-[#334155] font-semibold hover:bg-white/10 transition"
               >
                 Tentar novamente
               </button>
 
               <button
                 onClick={signOut}
-                className="px-5 py-2.5 rounded-xl bg-[#EEE8E2] text-[#4F4945] font-semibold hover:bg-white/10 transition"
+                className="px-5 py-2.5 rounded-xl bg-[#F1F5F9] text-[#334155] font-semibold hover:bg-white/10 transition"
               >
                 Sair
               </button>
@@ -762,16 +762,16 @@ export default function Home() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#F6F3EF] text-[#201D1B]">
+    <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
       <div className="min-h-screen lg:grid lg:grid-cols-[250px_minmax(0,1fr)]">
-        <aside className="hidden lg:flex lg:flex-col border-r border-[#EAE3DC] bg-[#FFFCF9] px-4 py-6">
+        <aside className="hidden lg:flex lg:flex-col border-r border-[#E2E8F0] bg-[#FFFFFF] px-4 py-6">
           <div className="flex items-center gap-3 px-3 mb-8">
-            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-white grid place-items-center font-black shadow-lg shadow-orange-200">
+            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-slate-900 grid place-items-center font-black shadow-lg shadow-orange-200">
               S
             </div>
             <div>
               <div className="font-extrabold text-orange-600 leading-tight">Shopee Stock AI</div>
-              <div className="text-[11px] text-[#8A817A] mt-0.5">Gestão inteligente</div>
+              <div className="text-[11px] text-[#64748B] mt-0.5">Gestão inteligente</div>
             </div>
           </div>
 
@@ -786,7 +786,7 @@ export default function Home() {
                 className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-left transition ${
                   activeTab === item.id
                     ? "bg-gradient-to-r from-[#FF5A1F] to-[#FF7A45] text-white shadow-lg shadow-orange-100"
-                    : "text-[#665F5A] hover:bg-[#FFF1E8] hover:text-orange-600"
+                    : "text-[#475569] hover:bg-[#FFF1E8] hover:text-orange-600"
                 }`}
               >
                 <span className="text-lg w-5 text-center">{item.icon}</span>
@@ -795,10 +795,10 @@ export default function Home() {
             ))}
           </nav>
 
-          <div className="mt-auto pt-6 border-t border-[#EAE3DC]">
+          <div className="mt-auto pt-6 border-t border-[#E2E8F0]">
             <button
               onClick={signOut}
-              className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-[#665F5A] hover:bg-[#F3EFEA]"
+              className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-[#475569] hover:bg-[#F8FAFC]"
             >
               <span className="text-lg">↪</span>
               Sair
@@ -807,7 +807,7 @@ export default function Home() {
         </aside>
 
         <div className="min-w-0">
-          <header className="sticky top-0 z-20 border-b border-[#EAE3DC] bg-[#FFFCF9]/95 backdrop-blur px-4 md:px-7 py-4">
+          <header className="sticky top-0 z-20 border-b border-[#E2E8F0] bg-[#FFFFFF]/95 backdrop-blur px-4 md:px-7 py-4">
             <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="lg:hidden h-10 w-10 shrink-0 rounded-xl bg-[#FF5A1F] text-white grid place-items-center font-black">S</div>
@@ -818,7 +818,7 @@ export default function Home() {
                       Conectada
                     </span>
                   </div>
-                  <div className="text-xs text-[#8A817A] truncate">{user.email}</div>
+                  <div className="text-xs text-[#64748B] truncate">{user.email}</div>
                 </div>
               </div>
 
@@ -850,7 +850,7 @@ export default function Home() {
                   className={`shrink-0 px-3 py-2 rounded-xl text-xs font-bold ${
                     activeTab === item.id
                       ? "bg-[#FF5A1F] text-white"
-                      : "bg-[#EEE8E2] text-[#665F5A]"
+                      : "bg-[#F1F5F9] text-[#475569]"
                   }`}
                 >
                   {item.label}
@@ -874,7 +874,7 @@ export default function Home() {
                     <h1 className="text-3xl md:text-4xl font-black tracking-tight mt-1 capitalize">
                       Olá, {firstName}!
                     </h1>
-                    <p className="text-[#665F5A] mt-2">Aqui está o resumo da sua operação na Shopee.</p>
+                    <p className="text-[#475569] mt-2">Aqui está o resumo da sua operação na Shopee.</p>
                   </div>
 
                   <div className="flex gap-2">
@@ -885,7 +885,7 @@ export default function Home() {
                         className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition ${
                           period === value
                             ? "bg-[#FF5A1F] border-[#FF5A1F] text-white"
-                            : "bg-[#FFFCF9] border-slate-200 text-[#665F5A] hover:border-orange-200"
+                            : "bg-[#FFFFFF] border-slate-200 text-[#475569] hover:border-orange-200"
                         }`}
                       >
                         {value === 1 ? "Hoje" : `${value} dias`}
@@ -909,11 +909,11 @@ export default function Home() {
                 </section>
 
                 <section className="grid grid-cols-1 xl:grid-cols-[1.45fr_.85fr] gap-5 mb-6">
-                  <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-5 shadow-sm">
+                  <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-5 shadow-sm">
                     <div className="flex items-center justify-between gap-3 mb-5">
                       <div>
                         <h2 className="font-extrabold text-lg">Performance</h2>
-                        <p className="text-sm text-[#8A817A]">Indicadores do período selecionado</p>
+                        <p className="text-sm text-[#64748B]">Indicadores do período selecionado</p>
                       </div>
                       <span className="text-xs font-bold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-lg">
                         {period === 1 ? "Hoje" : `${period} dias`}
@@ -930,9 +930,9 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-5 shadow-sm">
+                  <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-5 shadow-sm">
                     <h2 className="font-extrabold text-lg">Ações rápidas</h2>
-                    <p className="text-sm text-[#8A817A] mt-1">Atalhos para sua operação</p>
+                    <p className="text-sm text-[#64748B] mt-1">Atalhos para sua operação</p>
 
                     <div className="grid grid-cols-2 gap-3 mt-5">
                       <QuickAction
@@ -967,7 +967,7 @@ export default function Home() {
                 </section>
 
                 <div className="space-y-5">
-                  <div className="[&>section]:bg-white [&>section]:text-[#201D1B] [&>section]:border-[#EAE3DC] [&>section]:shadow-sm [&_.text-[#8A817A]]:text-[#8A817A] [&_.text-[#665F5A]]:text-[#665F5A] [&_.text-[#4F4945]]:text-[#4F4945]">
+                  <div className="[&>section]:bg-white [&>section]:text-[#0F172A] [&>section]:border-[#E2E8F0] [&>section]:shadow-sm [&_.text-[#64748B]]:text-[#64748B] [&_.text-[#475569]]:text-[#475569] [&_.text-[#334155]]:text-[#334155]">
                     <AlertsCenter data={data} />
                     <ExecutiveInsights data={data} money={money} />
                     <DemandForecastSection data={data} />
@@ -982,14 +982,14 @@ export default function Home() {
                   </div>
 
                   <section id="estoque" className="grid grid-cols-1 xl:grid-cols-[minmax(0,3fr)_minmax(320px,1fr)] gap-5">
-                    <div className="min-w-0 bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl overflow-hidden shadow-sm">
-                      <div className="p-5 border-b border-[#EAE3DC]">
+                    <div className="min-w-0 bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-sm">
+                      <div className="p-5 border-b border-[#E2E8F0]">
                         <h2 className="font-extrabold text-lg">Estoque</h2>
-                        <p className="text-sm text-[#8A817A] mt-1">
+                        <p className="text-sm text-[#64748B] mt-1">
                           Previsão de compra baseada nos últimos {Number(data.stockSettings?.forecastDays ?? 30)} dias
                         </p>
                         <div className="flex flex-wrap gap-2 mt-4">
-                          <span className="px-3 py-1.5 rounded-lg bg-[#EEE8E2] text-xs text-[#4F4945] font-semibold">
+                          <span className="px-3 py-1.5 rounded-lg bg-[#F1F5F9] text-xs text-[#334155] font-semibold">
                             {purchaseItems.length} item(ns) para comprar
                           </span>
                           <span className="px-3 py-1.5 rounded-lg bg-red-50 text-xs font-bold text-red-500">
@@ -1001,13 +1001,13 @@ export default function Home() {
                             </span>
                           )}
                         </div>
-                        {stockMessage && <p className="text-sm text-[#4F4945] mt-3">{stockMessage}</p>}
+                        {stockMessage && <p className="text-sm text-[#334155] mt-3">{stockMessage}</p>}
                       </div>
 
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead>
-                            <tr className="text-left text-xs uppercase text-[#8A817A] border-b border-[#EAE3DC]">
+                            <tr className="text-left text-xs uppercase text-[#64748B] border-b border-[#E2E8F0]">
                               <th className="px-5 py-4">Produto</th>
                               <th className="px-5 py-4">SKU</th>
                               <th className="px-5 py-4">Preço</th>
@@ -1031,14 +1031,14 @@ export default function Home() {
                               );
 
                               return (
-                                <tr key={variation.id} className="border-b border-[#EAE3DC] hover:bg-orange-50/60">
+                                <tr key={variation.id} className="border-b border-[#E2E8F0] hover:bg-orange-50/60">
                                   <td className="px-5 py-4">
                                     <div className="font-semibold text-sm">{product?.name || "Produto"}</div>
-                                    <div className="text-xs text-[#8A817A] mt-1">{variation.name}</div>
+                                    <div className="text-xs text-[#64748B] mt-1">{variation.name}</div>
                                   </td>
-                                  <td className="px-5 py-4 text-sm text-[#665F5A]">{variation.sku || product?.sku || "-"}</td>
+                                  <td className="px-5 py-4 text-sm text-[#475569]">{variation.sku || product?.sku || "-"}</td>
                                   <td className="px-5 py-4 text-sm">{money(Number(variation.price || 0))}</td>
-                                  <td className="px-5 py-4 text-sm text-[#665F5A]">{money(Number(variation.cost || 0))}</td>
+                                  <td className="px-5 py-4 text-sm text-[#475569]">{money(Number(variation.cost || 0))}</td>
                                   <td className="px-5 py-4">
                                     <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-bold ${
                                       stock <= Number(variation.min_stock ?? 5)
@@ -1073,7 +1073,7 @@ export default function Home() {
                               );
                             }) : (
                               <tr>
-                                <td colSpan={8} className="px-5 py-12 text-center text-[#8A817A]">
+                                <td colSpan={8} className="px-5 py-12 text-center text-[#64748B]">
                                   Nenhum produto cadastrado.
                                 </td>
                               </tr>
@@ -1083,10 +1083,10 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl overflow-hidden shadow-sm">
-                      <div className="p-5 border-b border-[#EAE3DC]">
+                    <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-sm">
+                      <div className="p-5 border-b border-[#E2E8F0]">
                         <h2 className="font-extrabold text-lg">Produtos com estoque baixo</h2>
-                        <p className="text-sm text-[#8A817A] mt-1">O que precisa da sua atenção</p>
+                        <p className="text-sm text-[#64748B] mt-1">O que precisa da sua atenção</p>
                       </div>
                       <div className="p-5 space-y-3">
                         {data.lowStock.length ? data.lowStock.slice(0, 8).map((variation) => {
@@ -1095,7 +1095,7 @@ export default function Home() {
                             <div key={variation.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-red-50/60">
                               <div className="min-w-0">
                                 <div className="font-semibold text-sm truncate">{product?.name || "Produto"}</div>
-                                <div className="text-xs text-[#8A817A] truncate">{variation.name}</div>
+                                <div className="text-xs text-[#64748B] truncate">{variation.name}</div>
                               </div>
                               <span className="shrink-0 px-2.5 py-1 rounded-lg bg-white text-red-500 text-xs font-bold">
                                 {Number(variation.stock || 0)} un.
@@ -1106,7 +1106,7 @@ export default function Home() {
                           <div className="py-10 text-center">
                             <div className="h-11 w-11 mx-auto rounded-full bg-emerald-50 text-emerald-600 grid place-items-center font-black">✓</div>
                             <p className="font-bold mt-3">Tudo tranquilo</p>
-                            <p className="text-sm text-[#8A817A] mt-1">Nenhum item com estoque baixo.</p>
+                            <p className="text-sm text-[#64748B] mt-1">Nenhum item com estoque baixo.</p>
                           </div>
                         )}
                       </div>
@@ -1117,19 +1117,19 @@ export default function Home() {
             )}
 
             {activeTab === "sales" && (
-              <div className="[&>section]:bg-white [&>section]:text-[#201D1B] [&>section]:border-[#EAE3DC] [&_.text-[#8A817A]]:text-[#8A817A] [&_.text-[#665F5A]]:text-[#665F5A]">
+              <div className="[&>section]:bg-white [&>section]:text-[#0F172A] [&>section]:border-[#E2E8F0] [&_.text-[#64748B]]:text-[#64748B] [&_.text-[#475569]]:text-[#475569]">
                 <SalesSection data={data} money={money} period={period} setPeriod={setPeriod} />
               </div>
             )}
 
             {activeTab === "purchases" && (
-              <div className="[&>section]:bg-white [&>section]:text-[#201D1B] [&>section]:border-[#EAE3DC] [&_.text-[#8A817A]]:text-[#8A817A] [&_.text-[#665F5A]]:text-[#665F5A]">
+              <div className="[&>section]:bg-white [&>section]:text-[#0F172A] [&>section]:border-[#E2E8F0] [&_.text-[#64748B]]:text-[#64748B] [&_.text-[#475569]]:text-[#475569]">
                 <PurchasesSection data={data} purchaseItems={purchaseItems} money={money} />
               </div>
             )}
 
             {activeTab === "reviews" && (
-              <div className="[&>section]:bg-white [&>section]:text-[#201D1B] [&>section]:border-[#EAE3DC] [&_.text-[#8A817A]]:text-[#8A817A] [&_.text-[#665F5A]]:text-[#665F5A] [&_.text-[#4F4945]]:text-[#4F4945]">
+              <div className="[&>section]:bg-white [&>section]:text-[#0F172A] [&>section]:border-[#E2E8F0] [&_.text-[#64748B]]:text-[#64748B] [&_.text-[#475569]]:text-[#475569] [&_.text-[#334155]]:text-[#334155]">
                 <ReviewsSection
                   reviews={reviews}
                   loading={reviewsLoading}
@@ -1172,17 +1172,17 @@ function LightMetricCard({
   };
 
   return (
-    <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-5 shadow-sm">
+    <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-[#665F5A]">{title}</p>
+          <p className="text-sm font-semibold text-[#475569]">{title}</p>
           <p className="text-2xl font-black tracking-tight mt-3">{value}</p>
         </div>
         <div className={`h-11 min-w-11 px-2 rounded-2xl grid place-items-center text-sm font-black ${tones[accent]}`}>
           {icon}
         </div>
       </div>
-      <div className="mt-4 h-1.5 rounded-full bg-[#EEE8E2] overflow-hidden">
+      <div className="mt-4 h-1.5 rounded-full bg-[#F1F5F9] overflow-hidden">
         <div className={`h-full w-2/3 rounded-full ${tones[accent].split(" ")[0]}`} />
       </div>
     </div>
@@ -1191,8 +1191,8 @@ function LightMetricCard({
 
 function LightMiniCard({ title, value }: { title: string; value: string }) {
   return (
-    <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl px-5 py-4 shadow-sm">
-      <p className="text-xs font-semibold text-[#8A817A]">{title}</p>
+    <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl px-5 py-4 shadow-sm">
+      <p className="text-xs font-semibold text-[#64748B]">{title}</p>
       <p className="text-xl font-black mt-1">{value}</p>
     </div>
   );
@@ -1200,8 +1200,8 @@ function LightMiniCard({ title, value }: { title: string; value: string }) {
 
 function LightStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-[#F3EFEA] p-4">
-      <p className="text-xs font-semibold text-[#8A817A]">{label}</p>
+    <div className="rounded-xl bg-[#F8FAFC] p-4">
+      <p className="text-xs font-semibold text-[#64748B]">{label}</p>
       <p className="font-extrabold mt-1">{value}</p>
     </div>
   );
@@ -1255,22 +1255,22 @@ function DemandForecastSection({
   }
 
   function statusClass(status: string) {
-    if (status === "ABAIXO_META") return "bg-red-500/10 text-red-400";
-    if (status === "ACIMA_META") return "bg-[#EEE8E2] text-[#4F4945]";
-    if (status === "NA_META") return "bg-green-500/10 text-green-400";
-    return "bg-[#EEE8E2] text-[#8A817A]";
+    if (status === "ABAIXO_META") return "bg-red-50 text-red-600";
+    if (status === "ACIMA_META") return "bg-[#F1F5F9] text-[#334155]";
+    if (status === "NA_META") return "bg-emerald-50 text-emerald-600";
+    return "bg-[#F1F5F9] text-[#64748B]";
   }
 
   return (
-    <section className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-6 mb-6">
+    <section className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6 mb-6">
       <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">Previsão de demanda e meta de estoque</h2>
-          <p className="text-sm text-[#8A817A] mt-1">
+          <p className="text-sm text-[#64748B] mt-1">
             Projeção baseada na média diária dos 30 dias usados pela inteligência de estoque.
           </p>
         </div>
-        <span className="px-3 py-1.5 rounded-lg bg-[#EEE8E2] text-xs text-[#665F5A]">
+        <span className="px-3 py-1.5 rounded-lg bg-[#F1F5F9] text-xs text-[#475569]">
           Cobertura-alvo: {Number(data.stockSettings?.coverageTargetDays || 0)} dias
         </span>
       </div>
@@ -1285,7 +1285,7 @@ function DemandForecastSection({
       <div className="mt-6 overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="text-left text-xs uppercase text-[#8A817A] border-b border-[#EAE3DC]">
+            <tr className="text-left text-xs uppercase text-[#64748B] border-b border-[#E2E8F0]">
               <th className="py-3 pr-4">Produto / SKU</th>
               <th className="py-3 pr-4">Média/dia</th>
               <th className="py-3 pr-4">7 dias</th>
@@ -1304,10 +1304,10 @@ function DemandForecastSection({
               const gap = variation.stock_target_gap == null ? null : Number(variation.stock_target_gap);
 
               return (
-                <tr key={`forecast-${variation.id}`} className="border-b border-[#EAE3DC]">
+                <tr key={`forecast-${variation.id}`} className="border-b border-[#E2E8F0]">
                   <td className="py-4 pr-4">
                     <div className="text-sm font-medium">{product?.name || "Produto"}</div>
-                    <div className="text-xs text-[#8A817A] mt-1">
+                    <div className="text-xs text-[#64748B] mt-1">
                       {variation.name} · {variation.sku || product?.sku || "-"}
                     </div>
                   </td>
@@ -1342,7 +1342,7 @@ function DemandForecastSection({
         </table>
       </div>
 
-      <p className="text-xs text-[#8A817A] mt-4">
+      <p className="text-xs text-[#64748B] mt-4">
         As projeções são estimativas lineares a partir da média diária observada. SKUs sem histórico de vendas não recebem demanda projetada.
       </p>
     </section>
@@ -1422,11 +1422,11 @@ function StockTrendSection({
       : "SEM_HISTORICO";
 
   return (
-    <section className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-6 mb-6">
+    <section className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6 mb-6">
       <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">Histórico e tendência de estoque</h2>
-          <p className="text-sm text-[#8A817A] mt-1">
+          <p className="text-sm text-[#64748B] mt-1">
             Evolução dos snapshots diários e referência para reposição.
           </p>
         </div>
@@ -1434,7 +1434,7 @@ function StockTrendSection({
         <select
           value={variation.id}
           onChange={(event) => setSelectedVariationId(event.target.value)}
-          className="bg-[#FFFCF9] text-[#201D1B] border border-[#DDD3CA] rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400"
+          className="bg-[#FFFFFF] text-[#0F172A] border border-[#CBD5E1] rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400"
         >
           {data.variations.map((item) => {
             const itemProduct = data.products.find(
@@ -1454,7 +1454,7 @@ function StockTrendSection({
         <div className="font-medium">
           {product?.name || "Produto"} · {variation.name}
         </div>
-        <div className="text-xs text-[#8A817A] mt-1">
+        <div className="text-xs text-[#64748B] mt-1">
           SKU: {variation.sku || product?.sku || "-"}
         </div>
       </div>
@@ -1499,7 +1499,7 @@ function StockTrendSection({
       </div>
 
       {hasEnoughHistory ? (
-        <div className="mt-6 rounded-xl bg-[#F3EFEA] border border-[#EAE3DC] p-4 overflow-x-auto">
+        <div className="mt-6 rounded-xl bg-white border border-[#E2E8F0] p-4 overflow-x-auto">
           <svg
             viewBox={`0 0 ${chartWidth} ${chartHeight}`}
             className="w-full min-w-[700px] h-[260px]"
@@ -1570,15 +1570,15 @@ function StockTrendSection({
           </svg>
         </div>
       ) : (
-        <div className="mt-6 rounded-xl bg-[#F3EFEA] border border-[#EAE3DC] py-12 text-center">
+        <div className="mt-6 rounded-xl bg-white border border-[#E2E8F0] py-12 text-center">
           <div className="font-medium">Histórico insuficiente</div>
-          <div className="text-sm text-[#8A817A] mt-1">
+          <div className="text-sm text-[#64748B] mt-1">
             São necessários pelo menos 2 snapshots diários para mostrar uma tendência.
           </div>
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3 mt-4 text-xs text-[#8A817A]">
+      <div className="flex flex-wrap gap-3 mt-4 text-xs text-[#64748B]">
         <span>{history.length} snapshot(s) exibido(s)</span>
         <span>·</span>
         <span>Máximo de 30 registros recentes</span>
@@ -1606,7 +1606,7 @@ function AlertsCenter({
   function alertStyle(level: string) {
     if (level === "CRITICO") {
       return {
-        badge: "bg-red-500/10 text-red-400",
+        badge: "bg-red-50 text-red-600",
         border: "border-red-500/10",
         label: "Crítico",
       };
@@ -1614,42 +1614,42 @@ function AlertsCenter({
 
     if (level === "ATENCAO") {
       return {
-        badge: "bg-orange-500/10 text-orange-400",
+        badge: "bg-orange-50 text-orange-600",
         border: "border-orange-500/10",
         label: "Atenção",
       };
     }
 
     return {
-      badge: "bg-[#EEE8E2] text-[#4F4945]",
-      border: "border-[#EAE3DC]",
+      badge: "bg-[#F1F5F9] text-[#334155]",
+      border: "border-[#E2E8F0]",
       label: "Informação",
     };
   }
 
   return (
-    <section className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-6 mb-6">
+    <section className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6 mb-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-semibold">Central de alertas</h2>
-            <span className="px-2.5 py-1 rounded-lg bg-[#EEE8E2] text-xs font-semibold">
+            <span className="px-2.5 py-1 rounded-lg bg-[#F1F5F9] text-xs font-semibold">
               {alerts.total}
             </span>
           </div>
-          <p className="text-sm text-[#8A817A] mt-1">
+          <p className="text-sm text-[#64748B] mt-1">
             Avisos operacionais gerados pelos dados de estoque e reposição.
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2 text-xs font-semibold">
-          <span className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400">
+          <span className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600">
             {alerts.critical} crítico(s)
           </span>
-          <span className="px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400">
+          <span className="px-3 py-1.5 rounded-lg bg-orange-50 text-orange-600">
             {alerts.attention} atenção
           </span>
-          <span className="px-3 py-1.5 rounded-lg bg-[#EEE8E2] text-[#665F5A]">
+          <span className="px-3 py-1.5 rounded-lg bg-[#F1F5F9] text-[#475569]">
             {alerts.info} informação
           </span>
         </div>
@@ -1669,7 +1669,7 @@ function AlertsCenter({
             return (
               <div
                 key={alert.id}
-                className={`rounded-xl border ${style.border} bg-[#F3EFEA] p-4`}
+                className={`rounded-xl border ${style.border} bg-[#F8FAFC] p-4`}
               >
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                   <div className="min-w-0">
@@ -1684,27 +1684,27 @@ function AlertsCenter({
                       </span>
                     </div>
 
-                    <div className="text-sm text-[#4F4945] mt-3">
+                    <div className="text-sm text-[#334155] mt-3">
                       {product?.name || "Produto"}
                       {variation?.name ? ` · ${variation.name}` : ""}
                     </div>
 
-                    <div className="text-xs text-[#8A817A] mt-1">
+                    <div className="text-xs text-[#64748B] mt-1">
                       SKU: {variation?.sku || product?.sku || "-"}
                     </div>
 
-                    <div className="text-xs text-[#665F5A] mt-2">
+                    <div className="text-xs text-[#475569] mt-2">
                       {alert.message}
                     </div>
                   </div>
 
                   <div className="md:text-right shrink-0">
-                    <div className="text-xs text-[#8A817A]">Ação sugerida</div>
+                    <div className="text-xs text-[#64748B]">Ação sugerida</div>
                     <div className="text-sm font-semibold mt-1">
                       {alert.action}
                     </div>
                     {alert.order_by_date && (
-                      <div className="text-xs text-[#8A817A] mt-2">
+                      <div className="text-xs text-[#64748B] mt-2">
                         Pedir até {formatStockDate(alert.order_by_date)}
                       </div>
                     )}
@@ -1715,16 +1715,16 @@ function AlertsCenter({
           })}
         </div>
       ) : (
-        <div className="mt-6 py-10 rounded-xl bg-[#F3EFEA] text-center">
+        <div className="mt-6 py-10 rounded-xl bg-[#F8FAFC] text-center">
           <div className="font-medium">Nenhum alerta ativo</div>
-          <div className="text-sm text-[#8A817A] mt-1">
+          <div className="text-sm text-[#64748B] mt-1">
             Não há nenhuma ação crítica identificada com os dados disponíveis.
           </div>
         </div>
       )}
 
       {alerts.items.length > 12 && (
-        <div className="text-xs text-[#8A817A] mt-4">
+        <div className="text-xs text-[#64748B] mt-4">
           Mostrando os 12 alertas mais importantes de {alerts.total}.
         </div>
       )}
@@ -1769,16 +1769,16 @@ function ExecutiveInsights({
   ].filter(Boolean);
 
   return (
-    <section className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-6 mb-6">
+    <section className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6 mb-6">
       <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold">Painel executivo</h2>
-          <p className="text-sm text-[#8A817A] mt-1">
+          <p className="text-sm text-[#64748B] mt-1">
             Resumo do período e das decisões de estoque que exigem atenção.
           </p>
         </div>
 
-        <span className="px-3 py-1.5 rounded-lg bg-[#EEE8E2] text-xs text-[#665F5A]">
+        <span className="px-3 py-1.5 rounded-lg bg-[#F1F5F9] text-xs text-[#475569]">
           Estoque previsto com janela fixa de 30 dias
         </span>
       </div>
@@ -1794,7 +1794,7 @@ function ExecutiveInsights({
         <div className="rounded-xl bg-red-500/[0.06] border border-red-500/10 p-4">
           <div className="text-xs text-red-300/70">SKUs em risco</div>
           <div className="text-2xl font-bold mt-1">{insights.riskSkus}</div>
-          <div className="text-xs text-[#8A817A] mt-2">
+          <div className="text-xs text-[#64748B] mt-2">
             Podem acabar antes da reposição chegar.
           </div>
         </div>
@@ -1802,34 +1802,34 @@ function ExecutiveInsights({
         <div className="rounded-xl bg-orange-500/[0.06] border border-orange-500/10 p-4">
           <div className="text-xs text-orange-300/70">Classe A crítica</div>
           <div className="text-2xl font-bold mt-1">{insights.criticalClassA}</div>
-          <div className="text-xs text-[#8A817A] mt-2">
+          <div className="text-xs text-[#64748B] mt-2">
             Itens de maior relevância com compra urgente ou alta.
           </div>
         </div>
 
-        <div className="rounded-xl bg-[#F3EFEA] border border-[#EAE3DC] p-4">
-          <div className="text-xs text-[#8A817A]">Caixa para reposição</div>
+        <div className="rounded-xl bg-white border border-[#E2E8F0] p-4">
+          <div className="text-xs text-[#64748B]">Caixa para reposição</div>
           <div className="text-2xl font-bold mt-1">
             {money(insights.purchaseInvestment)}
           </div>
-          <div className="text-xs text-[#8A817A] mt-2">
+          <div className="text-xs text-[#64748B] mt-2">
             Baseado nos custos cadastrados.
           </div>
         </div>
 
-        <div className="rounded-xl bg-[#F3EFEA] border border-[#EAE3DC] p-4">
-          <div className="text-xs text-[#8A817A]">Possível capital parado</div>
+        <div className="rounded-xl bg-white border border-[#E2E8F0] p-4">
+          <div className="text-xs text-[#64748B]">Possível capital parado</div>
           <div className="text-2xl font-bold mt-1">
             {money(insights.excessCapital)}
           </div>
-          <div className="text-xs text-[#8A817A] mt-2">
+          <div className="text-xs text-[#64748B] mt-2">
             Estimativa apenas para itens com histórico.
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4">
-        <div className="rounded-xl bg-[#F3EFEA] border border-[#EAE3DC] p-5">
+        <div className="rounded-xl bg-white border border-[#E2E8F0] p-5">
           <h3 className="font-semibold">O que exige atenção</h3>
 
           {actions.length ? (
@@ -1837,7 +1837,7 @@ function ExecutiveInsights({
               {actions.map((action, index) => (
                 <div
                   key={`${action}-${index}`}
-                  className="flex items-center gap-3 rounded-lg bg-[#F3EFEA] px-3 py-3 text-sm"
+                  className="flex items-center gap-3 rounded-lg bg-[#F8FAFC] px-3 py-3 text-sm"
                 >
                   <span className="w-2 h-2 rounded-full bg-white/60 shrink-0" />
                   <span>{action}</span>
@@ -1845,13 +1845,13 @@ function ExecutiveInsights({
               ))}
             </div>
           ) : (
-            <div className="text-sm text-[#8A817A] mt-4">
+            <div className="text-sm text-[#64748B] mt-4">
               Nenhuma ação crítica identificada com os dados disponíveis.
             </div>
           )}
         </div>
 
-        <div className="rounded-xl bg-[#F3EFEA] border border-[#EAE3DC] p-5">
+        <div className="rounded-xl bg-white border border-[#E2E8F0] p-5">
           <h3 className="font-semibold">Próximos pedidos</h3>
 
           {insights.nextOrderDates?.length ? (
@@ -1867,20 +1867,20 @@ function ExecutiveInsights({
                 return (
                   <div
                     key={`executive-order-${item.variation_id}`}
-                    className="flex items-center justify-between gap-4 rounded-lg bg-[#F3EFEA] px-3 py-3"
+                    className="flex items-center justify-between gap-4 rounded-lg bg-[#F8FAFC] px-3 py-3"
                   >
                     <div className="min-w-0">
                       <div className="text-sm font-medium truncate">
                         {product?.name || "Produto"}
                       </div>
-                      <div className="text-xs text-[#8A817A] mt-1">
+                      <div className="text-xs text-[#64748B] mt-1">
                         {variation?.name || "Variação"} · comprar{" "}
                         {Number(item.suggested_purchase || 0)} un.
                         {item.abc_class ? ` · ABC ${item.abc_class}` : ""}
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-xs text-[#8A817A]">Pedir até</div>
+                      <div className="text-xs text-[#64748B]">Pedir até</div>
                       <div className="text-sm font-semibold mt-1">
                         {formatStockDate(item.order_by_date)}
                       </div>
@@ -1890,7 +1890,7 @@ function ExecutiveInsights({
               })}
             </div>
           ) : (
-            <div className="text-sm text-[#8A817A] mt-4">
+            <div className="text-sm text-[#64748B] mt-4">
               Nenhum pedido previsto no momento.
             </div>
           )}
@@ -1942,18 +1942,18 @@ function StockHealthSection({
   }
 
   function healthClass(value: string) {
-    if (value === "RISCO_RUPTURA") return "bg-red-500/10 text-red-400";
-    if (value === "COMPRAR_AGORA") return "bg-orange-500/10 text-orange-400";
-    if (value === "EXCESSO") return "bg-yellow-500/10 text-yellow-300";
-    if (value === "BAIXO_GIRO") return "bg-[#EEE8E2] text-[#4F4945]";
-    return "bg-green-500/10 text-green-400";
+    if (value === "RISCO_RUPTURA") return "bg-red-50 text-red-600";
+    if (value === "COMPRAR_AGORA") return "bg-orange-50 text-orange-600";
+    if (value === "EXCESSO") return "bg-amber-50 text-yellow-300";
+    if (value === "BAIXO_GIRO") return "bg-[#F1F5F9] text-[#334155]";
+    return "bg-emerald-50 text-emerald-600";
   }
 
   return (
-    <section className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-6 mb-6">
+    <section className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6 mb-6">
       <div>
         <h2 className="text-xl font-semibold">Saúde do estoque</h2>
-        <p className="text-sm text-[#8A817A] mt-1">
+        <p className="text-sm text-[#64748B] mt-1">
           Diagnóstico usando giro, cobertura, prazo de reposição e necessidade de compra.
         </p>
       </div>
@@ -1968,12 +1968,12 @@ function StockHealthSection({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <div className="rounded-xl bg-[#F3EFEA] p-4">
-          <div className="text-xs text-[#8A817A]">Unidades em possível excesso</div>
+        <div className="rounded-xl bg-[#F8FAFC] p-4">
+          <div className="text-xs text-[#64748B]">Unidades em possível excesso</div>
           <div className="text-xl font-bold mt-1">{health.excessUnits} un.</div>
         </div>
-        <div className="rounded-xl bg-[#F3EFEA] p-4">
-          <div className="text-xs text-[#8A817A]">Capital estimado no excesso</div>
+        <div className="rounded-xl bg-[#F8FAFC] p-4">
+          <div className="text-xs text-[#64748B]">Capital estimado no excesso</div>
           <div className="text-xl font-bold mt-1">
             {money(Number(health.excessCapital || 0))}
           </div>
@@ -1992,14 +1992,14 @@ function StockHealthSection({
               return (
                 <div
                   key={`health-${variation.id}`}
-                  className="rounded-xl border border-[#EAE3DC] bg-[#F3EFEA] p-4"
+                  className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="font-medium text-sm">
                         {product?.name || "Produto"}
                       </div>
-                      <div className="text-xs text-[#8A817A] mt-1">
+                      <div className="text-xs text-[#64748B] mt-1">
                         {variation.name} · {variation.sku || product?.sku || "-"}
                       </div>
                     </div>
@@ -2014,13 +2014,13 @@ function StockHealthSection({
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-xs">
                     <div>
-                      <div className="text-[#8A817A]">Estoque</div>
+                      <div className="text-[#64748B]">Estoque</div>
                       <div className="font-semibold mt-1">
                         {Number(variation.stock || 0)} un.
                       </div>
                     </div>
                     <div>
-                      <div className="text-[#8A817A]">Cobertura</div>
+                      <div className="text-[#64748B]">Cobertura</div>
                       <div className="font-semibold mt-1">
                         {variation.days_of_stock == null
                           ? "Sem histórico"
@@ -2028,13 +2028,13 @@ function StockHealthSection({
                       </div>
                     </div>
                     <div>
-                      <div className="text-[#8A817A]">Comprar</div>
+                      <div className="text-[#64748B]">Comprar</div>
                       <div className="font-semibold mt-1">
                         {Number(variation.suggested_purchase || 0)} un.
                       </div>
                     </div>
                     <div>
-                      <div className="text-[#8A817A]">Excesso</div>
+                      <div className="text-[#64748B]">Excesso</div>
                       <div className="font-semibold mt-1">
                         {Number(variation.excess_units || 0)} un.
                       </div>
@@ -2047,7 +2047,7 @@ function StockHealthSection({
         </div>
       )}
 
-      <p className="text-xs text-[#8A817A] mt-5">
+      <p className="text-xs text-[#64748B] mt-5">
         Possível excesso é uma estimativa baseada em mais de duas vezes a cobertura-alvo.
         Produtos sem histórico de vendas não são classificados como excesso.
       </p>
@@ -2096,11 +2096,11 @@ function SalesSection({
 
   return (
     <section className="space-y-6">
-      <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-6">
+      <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
           <div>
             <h2 className="text-xl font-semibold">Vendas</h2>
-            <p className="text-sm text-[#8A817A] mt-1">
+            <p className="text-sm text-[#64748B] mt-1">
               Pedidos e desempenho comercial no período selecionado.
             </p>
           </div>
@@ -2113,7 +2113,7 @@ function SalesSection({
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                   period === value
                     ? "bg-white text-black"
-                    : "bg-[#EEE8E2] text-[#665F5A] hover:bg-white/10"
+                    : "bg-[#F1F5F9] text-[#475569] hover:bg-white/10"
                 }`}
               >
                 {value === 1 ? "Hoje" : `${value} dias`}
@@ -2132,9 +2132,9 @@ function SalesSection({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)] gap-6">
-        <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-6">
+        <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6">
           <h3 className="font-semibold text-lg">Vendas por dia</h3>
-          <p className="text-sm text-[#8A817A] mt-1">
+          <p className="text-sm text-[#64748B] mt-1">
             Faturamento diário dentro do período selecionado.
           </p>
 
@@ -2148,10 +2148,10 @@ function SalesSection({
 
                 return (
                   <div key={day.date} className="grid grid-cols-[80px_1fr_auto] items-center gap-3">
-                    <span className="text-xs text-[#8A817A]">
+                    <span className="text-xs text-[#64748B]">
                       {formatStockDate(day.date)}
                     </span>
-                    <div className="h-8 rounded-lg bg-[#F3EFEA] overflow-hidden">
+                    <div className="h-8 rounded-lg bg-[#F8FAFC] overflow-hidden">
                       <div
                         className="h-full rounded-lg bg-white/10"
                         style={{ width: `${width}%` }}
@@ -2159,7 +2159,7 @@ function SalesSection({
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-semibold">{money(Number(day.revenue || 0))}</div>
-                      <div className="text-[10px] text-[#8A817A]">
+                      <div className="text-[10px] text-[#64748B]">
                         {Number(day.orders || 0)} pedido(s)
                       </div>
                     </div>
@@ -2168,16 +2168,16 @@ function SalesSection({
               })}
             </div>
           ) : (
-            <div className="py-16 text-center text-sm text-[#8A817A]">
+            <div className="py-16 text-center text-sm text-[#64748B]">
               Nenhuma venda encontrada neste período.
             </div>
           )}
         </div>
 
-        <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl overflow-hidden">
-          <div className="p-5 border-b border-[#EAE3DC]">
+        <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl overflow-hidden">
+          <div className="p-5 border-b border-[#E2E8F0]">
             <h3 className="font-semibold text-lg">Mais vendidos</h3>
-            <p className="text-sm text-[#8A817A] mt-1">Ranking por unidades vendidas.</p>
+            <p className="text-sm text-[#64748B] mt-1">Ranking por unidades vendidas.</p>
           </div>
 
           <div className="p-5">
@@ -2186,24 +2186,24 @@ function SalesSection({
                 {sales.topProducts.map((item: any, index: number) => (
                   <div
                     key={`${item.product_id}-${item.variation_id || "product"}-${index}`}
-                    className="rounded-xl bg-[#F3EFEA] p-4"
+                    className="rounded-xl bg-[#F8FAFC] p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="text-xs text-[#8A817A]">#{index + 1}</div>
+                        <div className="text-xs text-[#64748B]">#{index + 1}</div>
                         <div className="font-medium text-sm mt-1">{item.name}</div>
-                        <div className="text-xs text-[#8A817A] mt-1">{item.sku || "-"}</div>
+                        <div className="text-xs text-[#64748B] mt-1">{item.sku || "-"}</div>
                       </div>
                       <span className="text-sm font-bold">{Number(item.units || 0)} un.</span>
                     </div>
-                    <div className="text-xs text-[#665F5A] mt-3">
+                    <div className="text-xs text-[#475569] mt-3">
                       Faturamento: {money(Number(item.revenue || 0))}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="py-12 text-center text-sm text-[#8A817A]">
+              <div className="py-12 text-center text-sm text-[#64748B]">
                 Sem produtos vendidos no período.
               </div>
             )}
@@ -2212,52 +2212,52 @@ function SalesSection({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-6">
+        <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6">
           <h3 className="font-semibold text-lg">Destaques dos produtos</h3>
-          <p className="text-sm text-[#8A817A] mt-1">Comparação por giro e lucro no período selecionado.</p>
+          <p className="text-sm text-[#64748B] mt-1">Comparação por giro e lucro no período selecionado.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-            <div className="rounded-xl bg-[#F3EFEA] p-4">
-              <div className="text-xs text-[#8A817A]">Mais vendido</div>
+            <div className="rounded-xl bg-[#F8FAFC] p-4">
+              <div className="text-xs text-[#64748B]">Mais vendido</div>
               <div className="font-semibold mt-2">{bestSeller?.name || "Sem vendas"}</div>
-              <div className="text-sm text-[#665F5A] mt-1">
+              <div className="text-sm text-[#475569] mt-1">
                 {bestSeller ? `${Number(bestSeller.units || 0)} un. · ${money(Number(bestSeller.revenue || 0))}` : "Nenhum dado no período"}
               </div>
             </div>
-            <div className="rounded-xl bg-[#F3EFEA] p-4">
-              <div className="text-xs text-[#8A817A]">Maior lucro bruto</div>
+            <div className="rounded-xl bg-[#F8FAFC] p-4">
+              <div className="text-xs text-[#64748B]">Maior lucro bruto</div>
               <div className="font-semibold mt-2">{mostProfitable?.name || "Sem vendas"}</div>
-              <div className="text-sm text-[#665F5A] mt-1">
+              <div className="text-sm text-[#475569] mt-1">
                 {mostProfitable ? `${money(Number(mostProfitable.profit || 0))} · ${Number(mostProfitable.margin || 0).toFixed(1)}% margem` : "Nenhum dado no período"}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-6">
+        <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6">
           <h3 className="font-semibold text-lg">Curva ABC</h3>
-          <p className="text-sm text-[#8A817A] mt-1">Classificação pela participação acumulada no faturamento.</p>
+          <p className="text-sm text-[#64748B] mt-1">Classificação pela participação acumulada no faturamento.</p>
           <div className="grid grid-cols-3 gap-3 mt-5">
             {(["A", "B", "C"] as const).map((abc) => (
-              <div key={abc} className="rounded-xl bg-[#F3EFEA] p-4 text-center">
+              <div key={abc} className="rounded-xl bg-[#F8FAFC] p-4 text-center">
                 <div className="text-2xl font-bold">{abcCounts[abc] || 0}</div>
-                <div className="text-xs text-[#8A817A] mt-1">Classe {abc}</div>
+                <div className="text-xs text-[#64748B] mt-1">Classe {abc}</div>
               </div>
             ))}
           </div>
-          <p className="text-xs text-[#8A817A] mt-4">A: até 80% · B: até 95% · C: restante do faturamento acumulado.</p>
+          <p className="text-xs text-[#64748B] mt-4">A: até 80% · B: até 95% · C: restante do faturamento acumulado.</p>
         </div>
       </div>
 
-      <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl overflow-hidden">
-        <div className="p-5 border-b border-[#EAE3DC]">
+      <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl overflow-hidden">
+        <div className="p-5 border-b border-[#E2E8F0]">
           <h3 className="font-semibold text-lg">Análise por produto</h3>
-          <p className="text-sm text-[#8A817A] mt-1">Faturamento, custo, lucro, margem, participação e curva ABC.</p>
+          <p className="text-sm text-[#64748B] mt-1">Faturamento, custo, lucro, margem, participação e curva ABC.</p>
         </div>
         {productAnalysis.length ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="text-left text-xs uppercase text-[#8A817A] border-b border-[#EAE3DC]">
+                <tr className="text-left text-xs uppercase text-[#64748B] border-b border-[#E2E8F0]">
                   <th className="px-5 py-4">Produto</th>
                   <th className="px-5 py-4">Unidades</th>
                   <th className="px-5 py-4">Faturamento</th>
@@ -2270,19 +2270,19 @@ function SalesSection({
               </thead>
               <tbody>
                 {productAnalysis.map((item: any, index: number) => (
-                  <tr key={`${item.product_id}-${item.variation_id || "product"}-${index}`} className="border-b border-[#EAE3DC] hover:bg-[#F3EFEA]">
+                  <tr key={`${item.product_id}-${item.variation_id || "product"}-${index}`} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]">
                     <td className="px-5 py-4">
                       <div className="font-medium text-sm">{item.name}</div>
-                      <div className="text-xs text-[#8A817A] mt-1">{item.variation_name || item.sku || "-"}</div>
+                      <div className="text-xs text-[#64748B] mt-1">{item.variation_name || item.sku || "-"}</div>
                     </td>
                     <td className="px-5 py-4 text-sm font-semibold">{Number(item.units || 0)}</td>
                     <td className="px-5 py-4 text-sm">{money(Number(item.revenue || 0))}</td>
-                    <td className="px-5 py-4 text-sm text-[#665F5A]">{money(Number(item.cost || 0))}</td>
+                    <td className="px-5 py-4 text-sm text-[#475569]">{money(Number(item.cost || 0))}</td>
                     <td className="px-5 py-4 text-sm font-semibold">{money(Number(item.profit || 0))}</td>
                     <td className="px-5 py-4 text-sm">{Number(item.margin || 0).toFixed(1)}%</td>
                     <td className="px-5 py-4 text-sm">{Number(item.revenue_share || 0).toFixed(1)}%</td>
                     <td className="px-5 py-4">
-                      <span className="inline-flex min-w-8 justify-center px-2.5 py-1 rounded-lg bg-[#EEE8E2] text-xs font-bold">{item.abc_class || "C"}</span>
+                      <span className="inline-flex min-w-8 justify-center px-2.5 py-1 rounded-lg bg-[#F1F5F9] text-xs font-bold">{item.abc_class || "C"}</span>
                     </td>
                   </tr>
                 ))}
@@ -2290,14 +2290,14 @@ function SalesSection({
             </table>
           </div>
         ) : (
-          <div className="py-16 px-6 text-center text-sm text-[#8A817A]">Nenhum produto vendido neste período.</div>
+          <div className="py-16 px-6 text-center text-sm text-[#64748B]">Nenhum produto vendido neste período.</div>
         )}
       </div>
 
-      <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl overflow-hidden">
-        <div className="p-5 border-b border-[#EAE3DC]">
+      <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl overflow-hidden">
+        <div className="p-5 border-b border-[#E2E8F0]">
           <h3 className="font-semibold text-lg">Pedidos recentes</h3>
-          <p className="text-sm text-[#8A817A] mt-1">
+          <p className="text-sm text-[#64748B] mt-1">
             Últimos pedidos válidos sincronizados da Shopee.
           </p>
         </div>
@@ -2306,7 +2306,7 @@ function SalesSection({
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="text-left text-xs uppercase text-[#8A817A] border-b border-[#EAE3DC]">
+                <tr className="text-left text-xs uppercase text-[#64748B] border-b border-[#E2E8F0]">
                   <th className="px-5 py-4">Pedido</th>
                   <th className="px-5 py-4">Data</th>
                   <th className="px-5 py-4">Status</th>
@@ -2316,15 +2316,15 @@ function SalesSection({
               </thead>
               <tbody>
                 {sales.recentOrders.map((order: any) => (
-                  <tr key={order.id} className="border-b border-[#EAE3DC] hover:bg-[#F3EFEA]">
+                  <tr key={order.id} className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]">
                     <td className="px-5 py-4 text-sm font-medium">
                       {order.order_sn || order.shopee_order_sn || order.id}
                     </td>
-                    <td className="px-5 py-4 text-sm text-[#665F5A] whitespace-nowrap">
+                    <td className="px-5 py-4 text-sm text-[#475569] whitespace-nowrap">
                       {formatSalesDate(order.order_date)}
                     </td>
                     <td className="px-5 py-4">
-                      <span className="inline-flex px-2.5 py-1 rounded-lg bg-[#EEE8E2] text-xs text-[#4F4945]">
+                      <span className="inline-flex px-2.5 py-1 rounded-lg bg-[#F1F5F9] text-xs text-[#334155]">
                         {order.status || "-"}
                       </span>
                     </td>
@@ -2340,7 +2340,7 @@ function SalesSection({
             </table>
           </div>
         ) : (
-          <div className="py-16 px-6 text-center text-sm text-[#8A817A]">
+          <div className="py-16 px-6 text-center text-sm text-[#64748B]">
             Nenhum pedido encontrado neste período.
           </div>
         )}
@@ -2491,17 +2491,17 @@ ${lines.join("\\n\\n")}`;
 
   return (
     <section className="space-y-6">
-      <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-6">
+      <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <h3 className="font-semibold text-lg">Planejamento de caixa</h3>
-            <p className="text-sm text-[#8A817A] mt-1">
+            <p className="text-sm text-[#64748B] mt-1">
               Quanto separar para executar a reposição sugerida usando o custo cadastrado de cada SKU.
             </p>
           </div>
 
           {purchaseCash.missingCostItems > 0 && (
-            <span className="px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 text-xs font-semibold">
+            <span className="px-3 py-1.5 rounded-lg bg-orange-50 text-orange-600 text-xs font-semibold">
               {purchaseCash.missingCostItems} item(ns) sem custo informado
             </span>
           )}
@@ -2541,7 +2541,7 @@ ${lines.join("\\n\\n")}`;
           <div className="mt-6 overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="text-left text-xs uppercase text-[#8A817A] border-b border-[#EAE3DC]">
+                <tr className="text-left text-xs uppercase text-[#64748B] border-b border-[#E2E8F0]">
                   <th className="py-3 pr-4">Produto</th>
                   <th className="py-3 pr-4">Prioridade</th>
                   <th className="py-3 pr-4">Comprar</th>
@@ -2561,13 +2561,13 @@ ${lines.join("\\n\\n")}`;
                   return (
                     <tr
                       key={`cash-${variation.id}`}
-                      className="border-b border-[#EAE3DC]"
+                      className="border-b border-[#E2E8F0]"
                     >
                       <td className="py-4 pr-4">
                         <div className="font-medium text-sm">
                           {product?.name || "Produto"}
                         </div>
-                        <div className="text-xs text-[#8A817A] mt-1">
+                        <div className="text-xs text-[#64748B] mt-1">
                           {variation.name} · {variation.sku || product?.sku || "-"}
                         </div>
                       </td>
@@ -2575,10 +2575,10 @@ ${lines.join("\\n\\n")}`;
                         <span
                           className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold ${
                             variation.purchase_priority === "URGENTE"
-                              ? "bg-red-500/10 text-red-400"
+                              ? "bg-red-50 text-red-600"
                               : variation.purchase_priority === "ALTA"
-                                ? "bg-orange-500/10 text-orange-400"
-                                : "bg-[#EEE8E2] text-[#4F4945]"
+                                ? "bg-orange-50 text-orange-600"
+                                : "bg-[#F1F5F9] text-[#334155]"
                           }`}
                         >
                           {variation.purchase_priority === "URGENTE"
@@ -2593,14 +2593,14 @@ ${lines.join("\\n\\n")}`;
                       </td>
                       <td className="py-4 pr-4 text-sm">
                         {hasCost ? money(unitCost) : (
-                          <span className="text-orange-400">
+                          <span className="text-orange-600">
                             Custo não informado
                           </span>
                         )}
                       </td>
                       <td className="py-4 text-sm font-semibold">
                         {hasCost ? money(investment) : (
-                          <span className="text-orange-400">
+                          <span className="text-orange-600">
                             Custo não informado
                           </span>
                         )}
@@ -2614,16 +2614,16 @@ ${lines.join("\\n\\n")}`;
         )}
       </div>
 
-      <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-6">
+      <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
           <div>
             <h2 className="text-xl font-semibold">Compras / Reposição</h2>
-            <p className="text-sm text-[#8A817A] mt-1">
+            <p className="text-sm text-[#64748B] mt-1">
               Lista de compra calculada com estoque atual, mínimo e previsão dos últimos {Number(data.stockSettings?.forecastDays ?? 30)} dias.
             </p>
           </div>
 
-          <div className="text-xs text-[#8A817A] lg:text-right">
+          <div className="text-xs text-[#64748B] lg:text-right">
             Cobertura planejada: {Number(data.stockSettings?.coverageTargetDays ?? 0)} dias
           </div>
         </div>
@@ -2636,11 +2636,11 @@ ${lines.join("\\n\\n")}`;
         </div>
       </div>
 
-      <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-6">
+      <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6">
         <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-5">
           <div>
             <h3 className="font-semibold text-lg">Sugestão de pedido de compra</h3>
-            <p className="text-sm text-[#8A817A] mt-1">
+            <p className="text-sm text-[#64748B] mt-1">
               Lista pronta com os SKUs que a inteligência de reposição recomenda comprar.
             </p>
           </div>
@@ -2660,7 +2660,7 @@ ${lines.join("\\n\\n")}`;
                 className={`px-3 py-2 rounded-lg text-xs font-semibold transition ${
                   purchaseOrderFilter === value
                     ? "bg-white text-black"
-                    : "bg-[#EEE8E2] text-[#665F5A] hover:text-white"
+                    : "bg-[#F1F5F9] text-[#475569] hover:text-slate-900"
                 }`}
               >
                 {label}
@@ -2671,7 +2671,7 @@ ${lines.join("\\n\\n")}`;
               type="button"
               onClick={copyPurchaseOrder}
               disabled={purchaseOrderItems.length === 0}
-              className="px-3 py-2 rounded-lg bg-white/10 text-white text-xs font-semibold disabled:opacity-40"
+              className="px-3 py-2 rounded-lg bg-white/10 text-slate-900 text-xs font-semibold disabled:opacity-40"
             >
               {purchaseOrderCopied ? "Pedido copiado" : "Copiar pedido"}
             </button>
@@ -2692,7 +2692,7 @@ ${lines.join("\\n\\n")}`;
           <div className="mt-6 overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="text-left text-xs uppercase text-[#8A817A] border-b border-[#EAE3DC]">
+                <tr className="text-left text-xs uppercase text-[#64748B] border-b border-[#E2E8F0]">
                   <th className="py-3 pr-4">Produto / SKU</th>
                   <th className="py-3 pr-4">ABC</th>
                   <th className="py-3 pr-4">Prioridade</th>
@@ -2712,13 +2712,13 @@ ${lines.join("\\n\\n")}`;
                   return (
                     <tr
                       key={`order-${variation.id}`}
-                      className="border-b border-[#EAE3DC]"
+                      className="border-b border-[#E2E8F0]"
                     >
                       <td className="py-4 pr-4">
                         <div className="text-sm font-medium">
                           {product?.name || "Produto"}
                         </div>
-                        <div className="text-xs text-[#8A817A] mt-1">
+                        <div className="text-xs text-[#64748B] mt-1">
                           {variation.name} · {variation.sku || product?.sku || "-"}
                         </div>
                       </td>
@@ -2729,10 +2729,10 @@ ${lines.join("\\n\\n")}`;
                         <span
                           className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold ${
                             variation.purchase_priority === "URGENTE"
-                              ? "bg-red-500/10 text-red-400"
+                              ? "bg-red-50 text-red-600"
                               : variation.purchase_priority === "ALTA"
-                                ? "bg-orange-500/10 text-orange-400"
-                                : "bg-[#EEE8E2] text-[#4F4945]"
+                                ? "bg-orange-50 text-orange-600"
+                                : "bg-[#F1F5F9] text-[#334155]"
                           }`}
                         >
                           {variation.purchase_priority === "URGENTE"
@@ -2748,12 +2748,12 @@ ${lines.join("\\n\\n")}`;
                       <td className="py-4 pr-4 text-sm">
                         {hasCost
                           ? money(Number(variation.purchase_unit_cost || 0))
-                          : <span className="text-orange-400">Não informado</span>}
+                          : <span className="text-orange-600">Não informado</span>}
                       </td>
                       <td className="py-4 pr-4 text-sm font-semibold">
                         {hasCost
                           ? money(Number(variation.purchase_investment || 0))
-                          : <span className="text-orange-400">Não informado</span>}
+                          : <span className="text-orange-600">Não informado</span>}
                       </td>
                       <td className="py-4 text-sm">
                         {variation.order_by_date
@@ -2767,30 +2767,30 @@ ${lines.join("\\n\\n")}`;
             </table>
           </div>
         ) : (
-          <div className="py-10 text-center text-sm text-[#8A817A]">
+          <div className="py-10 text-center text-sm text-[#64748B]">
             Nenhum SKU encontrado para este filtro.
           </div>
         )}
 
-        <p className="text-xs text-[#8A817A] mt-4">
+        <p className="text-xs text-[#64748B] mt-4">
           A sugestão apenas prepara a lista. Nenhuma compra ou mensagem é enviada automaticamente.
         </p>
       </div>
 
-      <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-6">
+      <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h3 className="font-semibold text-lg">Prioridades de compra</h3>
-            <p className="text-sm text-[#8A817A] mt-1">
+            <p className="text-sm text-[#64748B] mt-1">
               Ordem operacional cruzando risco de ruptura, Curva ABC, prazo e quantidade sugerida.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-xs font-semibold">
+            <span className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold">
               {urgentItems.length} urgente(s)
             </span>
-            <span className="px-3 py-1.5 rounded-lg bg-[#EEE8E2] text-[#4F4945] text-xs font-semibold">
+            <span className="px-3 py-1.5 rounded-lg bg-[#F1F5F9] text-[#334155] text-xs font-semibold">
               {classAItems.length} classe A
             </span>
           </div>
@@ -2806,31 +2806,31 @@ ${lines.join("\\n\\n")}`;
               return (
                 <div
                   key={`priority-${variation.id}`}
-                  className="rounded-xl bg-[#F3EFEA] border border-[#EAE3DC] p-4"
+                  className="rounded-xl bg-white border border-[#E2E8F0] p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="font-medium text-sm">
                         {product?.name || "Produto"}
                       </div>
-                      <div className="text-xs text-[#8A817A] mt-1">
+                      <div className="text-xs text-[#64748B] mt-1">
                         {variation.name} · {variation.sku || product?.sku || "-"}
                       </div>
                     </div>
 
                     <div className="flex gap-2">
                       {variation.abc_class && (
-                        <span className="px-2 py-1 rounded-lg bg-[#EEE8E2] text-xs font-bold">
+                        <span className="px-2 py-1 rounded-lg bg-[#F1F5F9] text-xs font-bold">
                           ABC {variation.abc_class}
                         </span>
                       )}
                       <span
                         className={`px-2 py-1 rounded-lg text-xs font-bold ${
                           variation.purchase_priority === "URGENTE"
-                            ? "bg-red-500/10 text-red-400"
+                            ? "bg-red-50 text-red-600"
                             : variation.purchase_priority === "ALTA"
-                              ? "bg-orange-500/10 text-orange-400"
-                              : "bg-[#EEE8E2] text-[#4F4945]"
+                              ? "bg-orange-50 text-orange-600"
+                              : "bg-[#F1F5F9] text-[#334155]"
                         }`}
                       >
                         {variation.purchase_priority === "URGENTE"
@@ -2844,19 +2844,19 @@ ${lines.join("\\n\\n")}`;
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-xs">
                     <div>
-                      <div className="text-[#8A817A]">Estoque</div>
+                      <div className="text-[#64748B]">Estoque</div>
                       <div className="font-semibold mt-1">
                         {Number(variation.stock || 0)} un.
                       </div>
                     </div>
                     <div>
-                      <div className="text-[#8A817A]">Comprar</div>
+                      <div className="text-[#64748B]">Comprar</div>
                       <div className="font-semibold mt-1">
                         {Number(variation.suggested_purchase || 0)} un.
                       </div>
                     </div>
                     <div>
-                      <div className="text-[#8A817A]">Cobertura</div>
+                      <div className="text-[#64748B]">Cobertura</div>
                       <div className="font-semibold mt-1">
                         {variation.days_of_stock == null
                           ? "Sem histórico"
@@ -2864,7 +2864,7 @@ ${lines.join("\\n\\n")}`;
                       </div>
                     </div>
                     <div>
-                      <div className="text-[#8A817A]">Pedir até</div>
+                      <div className="text-[#64748B]">Pedir até</div>
                       <div className="font-semibold mt-1">
                         {variation.order_by_date
                           ? formatStockDate(variation.order_by_date)
@@ -2877,16 +2877,16 @@ ${lines.join("\\n\\n")}`;
             })}
           </div>
         ) : (
-          <div className="mt-5 py-8 text-center text-sm text-[#8A817A]">
+          <div className="mt-5 py-8 text-center text-sm text-[#64748B]">
             Nenhuma compra sugerida agora.
           </div>
         )}
       </div>
 
-      <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl overflow-hidden">
-        <div className="p-5 border-b border-[#EAE3DC]">
+      <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl overflow-hidden">
+        <div className="p-5 border-b border-[#E2E8F0]">
           <h3 className="font-semibold text-lg">Lista de reposição</h3>
-          <p className="text-sm text-[#8A817A] mt-1">
+          <p className="text-sm text-[#64748B] mt-1">
             Prioridade automática: risco de ruptura primeiro e, depois, maior quantidade sugerida.
           </p>
         </div>
@@ -2895,7 +2895,7 @@ ${lines.join("\\n\\n")}`;
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="text-left text-xs uppercase text-[#8A817A] border-b border-[#EAE3DC]">
+                <tr className="text-left text-xs uppercase text-[#64748B] border-b border-[#E2E8F0]">
                   <th className="px-5 py-4">Prioridade</th>
                   <th className="px-5 py-4">Produto</th>
                   <th className="px-5 py-4">SKU</th>
@@ -2927,59 +2927,59 @@ ${lines.join("\\n\\n")}`;
                   return (
                     <tr
                       key={variation.id}
-                      className="border-b border-[#EAE3DC] hover:bg-[#F3EFEA]"
+                      className="border-b border-[#E2E8F0] hover:bg-[#F8FAFC]"
                     >
                       <td className="px-5 py-4">
                         {risk ? (
-                          <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400">
+                          <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600">
                             Urgente
                           </span>
                         ) : (
-                          <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold bg-yellow-500/10 text-yellow-400">
+                          <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-600">
                             Repor
                           </span>
                         )}
                       </td>
                       <td className="px-5 py-4">
                         <div className="font-medium">{product?.name || "Produto"}</div>
-                        <div className="text-xs text-[#8A817A] mt-1">{variation.name}</div>
+                        <div className="text-xs text-[#64748B] mt-1">{variation.name}</div>
                       </td>
-                      <td className="px-5 py-4 text-sm text-[#665F5A]">
+                      <td className="px-5 py-4 text-sm text-[#475569]">
                         {variation.sku || product?.sku || "-"}
                       </td>
                       <td className="px-5 py-4 text-sm">{stock} un.</td>
-                      <td className="px-5 py-4 text-sm text-[#4F4945]">
+                      <td className="px-5 py-4 text-sm text-[#334155]">
                         {average > 0 ? `${average.toFixed(2)} un./dia` : "Sem histórico"}
                       </td>
                       <td className="px-5 py-4 text-sm">
                         {average > 0 && coverage !== null ? (
-                          <span className={risk ? "text-red-400 font-semibold" : "text-[#4F4945]"}>
+                          <span className={risk ? "text-red-600 font-semibold" : "text-[#334155]"}>
                             {coverage.toFixed(1)} dias
                           </span>
                         ) : (
-                          <span className="text-[#8A817A]">Sem histórico</span>
+                          <span className="text-[#64748B]">Sem histórico</span>
                         )}
                       </td>
                       <td className="px-5 py-4 text-sm whitespace-nowrap">
                         {variation.order_by_date ? (
-                          <span className={risk ? "text-red-400 font-semibold" : "text-[#4F4945]"}>
+                          <span className={risk ? "text-red-600 font-semibold" : "text-[#334155]"}>
                             {formatStockDate(variation.order_by_date)}
                           </span>
                         ) : (
-                          <span className="text-[#8A817A]">Sem histórico</span>
+                          <span className="text-[#64748B]">Sem histórico</span>
                         )}
                       </td>
                       <td className="px-5 py-4 text-sm whitespace-nowrap">
                         {variation.estimated_stockout_date ? (
-                          <span className={risk ? "text-red-400" : "text-[#4F4945]"}>
+                          <span className={risk ? "text-red-600" : "text-[#334155]"}>
                             {formatStockDate(variation.estimated_stockout_date)}
                           </span>
                         ) : (
-                          <span className="text-[#8A817A]">Sem histórico</span>
+                          <span className="text-[#64748B]">Sem histórico</span>
                         )}
                       </td>
                       <td className="px-5 py-4">
-                        <span className="inline-flex px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-sm font-bold">
+                        <span className="inline-flex px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-sm font-bold">
                           {quantity} un.
                         </span>
                       </td>
@@ -2996,7 +2996,7 @@ ${lines.join("\\n\\n")}`;
           <div className="py-16 px-6 text-center">
             <div className="text-3xl mb-3">✓</div>
             <p className="font-medium">Nenhuma compra necessária agora</p>
-            <p className="text-sm text-[#8A817A] mt-1">
+            <p className="text-sm text-[#64748B] mt-1">
               O estoque atual atende aos parâmetros de reposição configurados.
             </p>
           </div>
@@ -3019,10 +3019,10 @@ function StockHistorySection({ data }: { data: DashboardData }) {
     .slice(0, 6);
 
   return (
-    <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl overflow-hidden">
-      <div className="p-5 border-b border-[#EAE3DC]">
+    <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl overflow-hidden">
+      <div className="p-5 border-b border-[#E2E8F0]">
         <h3 className="font-semibold text-lg">Histórico de estoque</h3>
-        <p className="text-sm text-[#8A817A] mt-1">
+        <p className="text-sm text-[#64748B] mt-1">
           Snapshots diários salvos nas sincronizações. O gráfico ganha pontos novos a cada dia.
         </p>
       </div>
@@ -3045,25 +3045,25 @@ function StockHistorySection({ data }: { data: DashboardData }) {
               .join(" ");
 
             return (
-              <div key={variation.id} className="rounded-xl bg-[#F3EFEA] border border-[#EAE3DC] p-4">
+              <div key={variation.id} className="rounded-xl bg-white border border-[#E2E8F0] p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-medium text-sm">{product?.name || "Produto"}</p>
-                    <p className="text-xs text-[#8A817A] mt-1">{variation.name}</p>
+                    <p className="text-xs text-[#64748B] mt-1">{variation.name}</p>
                   </div>
-                  <span className="text-xs text-[#665F5A]">{Number(variation.stock || 0)} un.</span>
+                  <span className="text-xs text-[#475569]">{Number(variation.stock || 0)} un.</span>
                 </div>
                 <div className="h-32 mt-4">
                   <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
-                    <line x1="0" y1="90" x2="100" y2="90" stroke="currentColor" className="text-white/10" strokeWidth="1" />
+                    <line x1="0" y1="90" x2="100" y2="90" stroke="currentColor" className="text-slate-900/10" strokeWidth="1" />
                     {history.length > 1 ? (
-                      <polyline points={points} fill="none" stroke="currentColor" className="text-white" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+                      <polyline points={points} fill="none" stroke="currentColor" className="text-slate-900" strokeWidth="2" vectorEffect="non-scaling-stroke" />
                     ) : (
-                      <circle cx="50" cy="50" r="2.5" fill="currentColor" className="text-white" />
+                      <circle cx="50" cy="50" r="2.5" fill="currentColor" className="text-slate-900" />
                     )}
                   </svg>
                 </div>
-                <div className="flex justify-between text-[11px] text-[#8A817A] mt-2">
+                <div className="flex justify-between text-[11px] text-[#64748B] mt-2">
                   <span>{history[0]?.snapshot_date ? formatStockDate(history[0].snapshot_date) : "-"}</span>
                   <span>{history.at(-1)?.snapshot_date ? formatStockDate(history.at(-1).snapshot_date) : "-"}</span>
                 </div>
@@ -3074,7 +3074,7 @@ function StockHistorySection({ data }: { data: DashboardData }) {
       ) : (
         <div className="py-12 px-6 text-center">
           <p className="font-medium">Histórico começando agora</p>
-          <p className="text-sm text-[#8A817A] mt-1">
+          <p className="text-sm text-[#64748B] mt-1">
             Depois da primeira sincronização com a nova versão, o sistema começa a registrar um ponto de estoque por dia.
           </p>
         </div>
@@ -3093,9 +3093,9 @@ function PurchaseMetric({
   danger?: boolean;
 }) {
   return (
-    <div className="bg-[#F3EFEA] rounded-xl p-4">
-      <p className="text-xs text-[#8A817A]">{title}</p>
-      <p className={`text-xl font-bold mt-2 ${danger ? "text-red-400" : "text-white"}`}>
+    <div className="bg-[#F8FAFC] rounded-xl p-4">
+      <p className="text-xs text-[#64748B]">{title}</p>
+      <p className={`text-xl font-bold mt-2 ${danger ? "text-red-600" : "text-slate-900"}`}>
         {value}
       </p>
     </div>
@@ -3133,20 +3133,20 @@ function StockSettingsCard({
     parsedSafety <= 365;
 
   return (
-    <section className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-6 mb-6">
+    <section className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-6 mb-6">
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
         <div>
           <h2 className="text-lg font-semibold">
             Configuração de reposição
           </h2>
-          <p className="text-sm text-[#8A817A] mt-1">
+          <p className="text-sm text-[#64748B] mt-1">
             Ajuste o prazo do fornecedor e a margem de segurança usados na previsão.
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
           <label className="block">
-            <span className="text-xs text-[#8A817A]">Prazo de entrega</span>
+            <span className="text-xs text-[#64748B]">Prazo de entrega</span>
             <div className="flex items-center gap-2 mt-2">
               <input
                 type="number"
@@ -3155,14 +3155,14 @@ function StockSettingsCard({
                 step="1"
                 value={leadTime}
                 onChange={(event) => setLeadTime(event.target.value)}
-                className="w-24 rounded-xl bg-[#0b0c10] border border-[#DDD3CA] px-3 py-2.5 text-sm text-white outline-none focus:border-white/30"
+                className="w-24 rounded-xl bg-[#0b0c10] border border-[#CBD5E1] px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-white/30"
               />
-              <span className="text-sm text-[#8A817A]">dias</span>
+              <span className="text-sm text-[#64748B]">dias</span>
             </div>
           </label>
 
           <label className="block">
-            <span className="text-xs text-[#8A817A]">Margem de segurança</span>
+            <span className="text-xs text-[#64748B]">Margem de segurança</span>
             <div className="flex items-center gap-2 mt-2">
               <input
                 type="number"
@@ -3171,9 +3171,9 @@ function StockSettingsCard({
                 step="1"
                 value={safety}
                 onChange={(event) => setSafety(event.target.value)}
-                className="w-24 rounded-xl bg-[#0b0c10] border border-[#DDD3CA] px-3 py-2.5 text-sm text-white outline-none focus:border-white/30"
+                className="w-24 rounded-xl bg-[#0b0c10] border border-[#CBD5E1] px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-white/30"
               />
-              <span className="text-sm text-[#8A817A]">dias</span>
+              <span className="text-sm text-[#64748B]">dias</span>
             </div>
           </label>
 
@@ -3187,9 +3187,9 @@ function StockSettingsCard({
         </div>
       </div>
 
-      <div className="mt-4 text-xs text-[#8A817A]">
+      <div className="mt-4 text-xs text-[#64748B]">
         Cobertura planejada:{" "}
-        <span className="text-[#4F4945] font-semibold">
+        <span className="text-[#334155] font-semibold">
           {valid ? parsedLeadTime + parsedSafety : "-"} dias
         </span>
       </div>
@@ -3228,13 +3228,13 @@ function MinimumStockEditor({
         onChange={(event) =>
           setMinimum(event.target.value)
         }
-        className="w-20 rounded-lg bg-[#0b0c10] border border-[#DDD3CA] px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+        className="w-20 rounded-lg bg-[#0b0c10] border border-[#CBD5E1] px-3 py-2 text-sm text-slate-900 outline-none focus:border-white/30"
       />
 
       <button
         onClick={() => onSave(parsed)}
         disabled={!valid || saving}
-        className="px-3 py-2 rounded-lg bg-[#EEE8E2] text-xs font-semibold text-[#4F4945] hover:bg-white/10 disabled:opacity-50"
+        className="px-3 py-2 rounded-lg bg-[#F1F5F9] text-xs font-semibold text-[#334155] hover:bg-white/10 disabled:opacity-50"
       >
         {saving ? "..." : "Salvar"}
       </button>
@@ -3278,15 +3278,15 @@ function ReviewsSection({
   ).length;
 
   return (
-    <section className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl overflow-hidden">
-      <div className="p-6 border-b border-[#EAE3DC]">
+    <section className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl overflow-hidden">
+      <div className="p-6 border-b border-[#E2E8F0]">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold">
               Avaliações
             </h2>
 
-            <p className="text-sm text-[#8A817A] mt-1">
+            <p className="text-sm text-[#64748B] mt-1">
               Prepare, revise e envie respostas para seus clientes.
             </p>
           </div>
@@ -3295,7 +3295,7 @@ function ReviewsSection({
             <button
               onClick={onCreateTest}
               disabled={loading}
-              className="px-4 py-2.5 rounded-xl bg-yellow-500/10 text-yellow-400 text-sm font-semibold hover:bg-yellow-500/20 disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl bg-amber-50 text-amber-600 text-sm font-semibold hover:bg-yellow-500/20 disabled:opacity-50"
             >
               🧪 Criar avaliação teste
             </button>
@@ -3303,7 +3303,7 @@ function ReviewsSection({
             <button
               onClick={onSync}
               disabled={loading}
-              className="px-4 py-2.5 rounded-xl bg-[#EEE8E2] text-white text-sm font-semibold hover:bg-white/10 disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl bg-[#F1F5F9] text-slate-900 text-sm font-semibold hover:bg-white/10 disabled:opacity-50"
             >
               {loading
                 ? "Sincronizando..."
@@ -3321,8 +3321,8 @@ function ReviewsSection({
         </div>
 
         <div className="flex gap-4 mt-5 text-sm">
-          <div className="bg-[#F3EFEA] rounded-xl px-4 py-3">
-            <p className="text-[#8A817A] text-xs">
+          <div className="bg-[#F8FAFC] rounded-xl px-4 py-3">
+            <p className="text-[#64748B] text-xs">
               Total
             </p>
             <p className="font-bold mt-1">
@@ -3330,8 +3330,8 @@ function ReviewsSection({
             </p>
           </div>
 
-          <div className="bg-[#F3EFEA] rounded-xl px-4 py-3">
-            <p className="text-[#8A817A] text-xs">
+          <div className="bg-[#F8FAFC] rounded-xl px-4 py-3">
+            <p className="text-[#64748B] text-xs">
               Pendentes
             </p>
             <p className="font-bold mt-1">
@@ -3341,7 +3341,7 @@ function ReviewsSection({
         </div>
 
         {message && (
-          <div className="mt-4 rounded-xl bg-[#F3EFEA] border border-[#EAE3DC] px-4 py-3 text-sm text-[#4F4945]">
+          <div className="mt-4 rounded-xl bg-white border border-[#E2E8F0] px-4 py-3 text-sm text-[#334155]">
             {message}
           </div>
         )}
@@ -3356,7 +3356,7 @@ function ReviewsSection({
             <p className="font-medium">
               Nenhuma avaliação encontrada
             </p>
-            <p className="text-sm text-[#8A817A] mt-1">
+            <p className="text-sm text-[#64748B] mt-1">
               Clique em Sincronizar para buscar avaliações da Shopee.
             </p>
           </div>
@@ -3440,7 +3440,7 @@ function ReviewCard({
   }, [prepared]);
 
   return (
-    <div className="rounded-2xl border border-[#EAE3DC] bg-[#F3EFEA] p-5">
+    <div className="rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] p-5">
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
@@ -3464,8 +3464,8 @@ function ReviewCard({
             <span
               className={`text-xs px-2.5 py-1 rounded-lg font-semibold ${
                 isSent
-                  ? "bg-green-500/10 text-green-400"
-                  : "bg-yellow-500/10 text-yellow-400"
+                  ? "bg-emerald-50 text-emerald-600"
+                  : "bg-amber-50 text-amber-600"
               }`}
             >
               {isSent
@@ -3474,7 +3474,7 @@ function ReviewCard({
             </span>
 
             {review.is_test && (
-              <span className="text-xs px-2.5 py-1 rounded-lg font-semibold bg-orange-500/10 text-orange-400">
+              <span className="text-xs px-2.5 py-1 rounded-lg font-semibold bg-orange-50 text-orange-600">
                 TESTE
               </span>
             )}
@@ -3485,23 +3485,23 @@ function ReviewCard({
               "Cliente"}
           </p>
 
-          <p className="text-sm text-[#665F5A] mt-2 whitespace-pre-wrap">
+          <p className="text-sm text-[#475569] mt-2 whitespace-pre-wrap">
             {review.comment ||
               "Cliente não deixou comentário."}
           </p>
         </div>
       </div>
 
-      <div className="mt-5 rounded-xl bg-black/20 border border-[#EAE3DC] p-4">
+      <div className="mt-5 rounded-xl bg-black/20 border border-[#E2E8F0] p-4">
         <div className="flex items-center justify-between gap-3 mb-3">
-          <p className="text-xs uppercase tracking-wide text-[#8A817A]">
+          <p className="text-xs uppercase tracking-wide text-[#64748B]">
             Resposta preparada
           </p>
 
           {!isSent && prepared && !isEditing && (
             <button
               onClick={onEdit}
-              className="text-xs text-[#4F4945] hover:text-white"
+              className="text-xs text-[#334155] hover:text-slate-900"
             >
               Editar
             </button>
@@ -3516,7 +3516,7 @@ function ReviewCard({
                 setText(event.target.value)
               }
               rows={4}
-              className="w-full rounded-xl bg-[#0b0c10] border border-[#DDD3CA] p-3 text-sm text-white outline-none focus:border-white/30"
+              className="w-full rounded-xl bg-[#0b0c10] border border-[#CBD5E1] p-3 text-sm text-slate-900 outline-none focus:border-white/30"
             />
 
             <div className="flex gap-2 mt-3">
@@ -3530,14 +3530,14 @@ function ReviewCard({
 
               <button
                 onClick={onCancel}
-                className="px-4 py-2 rounded-lg bg-[#EEE8E2] text-[#4F4945] text-sm font-semibold"
+                className="px-4 py-2 rounded-lg bg-[#F1F5F9] text-[#334155] text-sm font-semibold"
               >
                 Cancelar
               </button>
             </div>
           </>
         ) : (
-          <p className="text-sm text-[#4F4945] whitespace-pre-wrap">
+          <p className="text-sm text-[#334155] whitespace-pre-wrap">
             {prepared ||
               "Nenhuma resposta preparada ainda."}
           </p>
@@ -3548,7 +3548,7 @@ function ReviewCard({
         <div className="flex justify-end mt-4">
           <button
             onClick={onDeleteTest}
-            className="px-4 py-2.5 rounded-xl bg-red-500/10 text-red-400 text-sm font-semibold hover:bg-red-500/20"
+            className="px-4 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-500/20"
           >
             Excluir teste
           </button>
@@ -3582,9 +3582,9 @@ function MetricCard({
   subtitle: string;
 }) {
   return (
-    <div className="bg-[#FFFCF9] border border-[#EAE3DC] rounded-2xl p-5">
+    <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl p-5">
 
-      <p className="text-sm text-[#8A817A]">
+      <p className="text-sm text-[#64748B]">
         {title}
       </p>
 
@@ -3592,7 +3592,7 @@ function MetricCard({
         {value}
       </p>
 
-      <p className="text-xs text-[#8A817A] mt-2">
+      <p className="text-xs text-[#64748B] mt-2">
         {subtitle}
       </p>
 
@@ -3608,9 +3608,9 @@ function PerformanceCard({
   value: string;
 }) {
   return (
-    <div className="bg-[#F3EFEA] rounded-xl p-4">
+    <div className="bg-[#F8FAFC] rounded-xl p-4">
 
-      <p className="text-xs text-[#8A817A]">
+      <p className="text-xs text-[#64748B]">
         {title}
       </p>
 
