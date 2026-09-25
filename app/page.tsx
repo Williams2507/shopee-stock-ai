@@ -1772,6 +1772,8 @@ function ExecutiveInsights({
     <section className="bg-[#FFFFFF] border border-slate-200 rounded-lg p-6 mb-5">
       <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
         <div>
+          <AdsPerformanceDemo />
+
           <h2 className="text-xl font-semibold">Visão geral</h2>
           <p className="text-sm text-[#64748B] mt-1">
             Indicadores consolidados de vendas, estoque e necessidade de reposição.
@@ -2091,6 +2093,160 @@ function businessPriority(stock: number, minStock: number) {
     badge: "bg-slate-50 text-slate-600 border-slate-200",
     order: 3,
   };
+}
+
+
+const DEMO_ADS_PERIODS = {
+  hoje: {
+    label: "Hoje (GMT-3)",
+    impressions: "8.8k",
+    clicks: "336",
+    ctr: "3,82%",
+    orders: "16",
+    items: "16",
+    sales: "R$257,06",
+    investment: "R$16,00",
+    roas: "16,07",
+  },
+  semana: {
+    label: "Última semana (GMT-3)",
+    impressions: "101.2k",
+    clicks: "3.7k",
+    ctr: "3,68%",
+    orders: "196",
+    items: "199",
+    sales: "R$3.309,68",
+    investment: "R$220,62",
+    roas: "15,00",
+  },
+  mes: {
+    label: "Último mês (GMT-3)",
+    impressions: "360.5k",
+    clicks: "13.1k",
+    ctr: "3,63%",
+    orders: "635",
+    items: "655",
+    sales: "R$10.887,11",
+    investment: "R$744,23",
+    roas: "14,63",
+  },
+  trimestre: {
+    label: "Últimos 3 meses (GMT-3)",
+    impressions: "814.3k",
+    clicks: "26.8k",
+    ctr: "3,30%",
+    orders: "1.1k",
+    items: "1.2k",
+    sales: "R$24.806,27",
+    investment: "R$2.344,97",
+    roas: "10,58",
+  },
+} as const;
+
+function AdsPerformanceDemo() {
+  const [period, setPeriod] = useState<keyof typeof DEMO_ADS_PERIODS>("mes");
+  const m = DEMO_ADS_PERIODS[period];
+
+  const cards = [
+    ["Impressões", m.impressions, ""],
+    ["Cliques", m.clicks, "border-t-[3px] border-t-[#2F80ED] shadow-sm"],
+    ["CTR", m.ctr, ""],
+    ["Pedidos", m.orders, ""],
+    ["Itens vendidos", m.items, ""],
+    ["Vendas", m.sales, "border-t-[3px] border-t-[#FF6B4A] shadow-sm"],
+    ["Investimento", m.investment, ""],
+    ["ROAS", m.roas, "border-t-[3px] border-t-[#5B6F95] shadow-sm"],
+  ];
+
+  const seed = period === "hoje" ? 3 : period === "semana" ? 7 : period === "mes" ? 11 : 17;
+  const count = period === "hoje" ? 28 : period === "semana" ? 34 : period === "mes" ? 38 : 44;
+  const series = Array.from({ length: count }, (_, i) => {
+    const wave = Math.sin((i + seed) * 0.72) * 18 + Math.sin((i + seed) * 1.91) * 9;
+    const trend = period === "trimestre" ? i * 0.7 : period === "mes" ? i * 0.45 : i * 0.15;
+    const spike = (i + seed) % 11 === 0 ? 38 : 0;
+    return Math.max(2, 28 + wave + trend + spike);
+  });
+  const sales = series.map((v, i) => Math.max(1, v * (0.56 + 0.22 * Math.sin(i * 1.27)) + ((i + seed) % 13 === 0 ? 30 : 0)));
+  const roas = series.map((v, i) => Math.max(3, 22 + Math.sin(i * 0.9) * 8 + ((i + seed) % 17 === 0 ? 36 : 0)));
+
+  const w=1100, h=220, pad=14;
+  const max=Math.max(...series,...sales,...roas,1);
+  const path=(arr:number[]) => arr.map((v,i)=>{
+    const x=pad+(i/(arr.length-1))*(w-pad*2);
+    const y=h-pad-(v/max)*(h-pad*2);
+    return `${i===0?"M":"L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+  }).join(" ");
+
+  return (
+    <section className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+      <div className="px-5 py-4 border-b border-slate-200 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold text-slate-900">Desempenho de anúncios</h2>
+          <p className="text-sm text-slate-500 mt-1">Indicadores de mídia paga e vendas atribuídas aos anúncios.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {([
+            ["hoje","Hoje"],
+            ["semana","7 dias"],
+            ["mes","30 dias"],
+            ["trimestre","3 meses"],
+          ] as const).map(([key,label]) => (
+            <button
+              key={key}
+              onClick={() => setPeriod(key)}
+              className={`px-3.5 py-2 rounded-md border text-sm font-medium transition-colors ${
+                period === key
+                  ? "border-[#EE4D2D] bg-[#FFF4F1] text-[#EE4D2D]"
+                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-5">
+        <div className="flex justify-end mb-4">
+          <div className="border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-700 bg-white">
+            {m.label}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {cards.map(([label,value,extra]) => (
+            <div key={label} className={`border border-slate-200 rounded-md bg-white px-4 py-4 min-h-[92px] ${extra}`}>
+              <div className="text-sm font-medium text-slate-700">{label}</div>
+              <div className="text-2xl font-semibold text-slate-900 mt-1">{value}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-end gap-5 mt-6 mb-2 text-sm text-slate-600">
+          <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#2F80ED]" />Cliques</span>
+          <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#FF6B4A]" />Vendas</span>
+          <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#5B6F95]" />ROAS</span>
+        </div>
+
+        <div className="relative h-[250px]">
+          <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="w-full h-full">
+            {[0.15,0.35,0.55,0.75,0.95].map(y => (
+              <line key={y} x1="0" x2={w} y1={h*y} y2={h*y} stroke="#D9E2F1" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+            ))}
+            <path d={path(series)} fill="none" stroke="#2F80ED" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            <path d={path(sales)} fill="none" stroke="#FF6B4A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            <path d={path(roas)} fill="none" stroke="#5B6F95" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          </svg>
+          <div className="absolute left-0 right-0 bottom-0 flex justify-between text-[11px] text-slate-500 px-1">
+            <span>{period === "hoje" ? "00:00" : period === "semana" ? "19/09" : period === "mes" ? "25/08" : "25/06"}</span>
+            <span>{period === "hoje" ? "06:00" : period === "semana" ? "21/09" : period === "mes" ? "04/09" : "21/07"}</span>
+            <span>{period === "hoje" ? "12:00" : period === "semana" ? "23/09" : period === "mes" ? "14/09" : "16/08"}</span>
+            <span>{period === "hoje" ? "18:00" : "25/09"}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function RevenueLineChart({
