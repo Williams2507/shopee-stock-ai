@@ -1791,16 +1791,16 @@ function ExecutiveInsights({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
-        <div className="rounded-xl bg-red-500/[0.06] border border-red-500/10 p-4">
-          <div className="text-xs text-red-300/70">SKUs em risco</div>
+        <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+          <div className="text-xs font-medium text-red-600">SKUs em risco</div>
           <div className="text-2xl font-bold mt-1">{insights.riskSkus}</div>
           <div className="text-xs text-[#64748B] mt-2">
             Podem acabar antes da reposição chegar.
           </div>
         </div>
 
-        <div className="rounded-xl bg-orange-500/[0.06] border border-orange-500/10 p-4">
-          <div className="text-xs text-orange-300/70">Classe A crítica</div>
+        <div className="rounded-lg bg-orange-50 border border-orange-200 p-4">
+          <div className="text-xs font-medium text-orange-600">Classe A crítica</div>
           <div className="text-2xl font-bold mt-1">{insights.criticalClassA}</div>
           <div className="text-xs text-[#64748B] mt-2">
             Itens de maior relevância com compra urgente ou alta.
@@ -1839,7 +1839,7 @@ function ExecutiveInsights({
                   key={`${action}-${index}`}
                   className="flex items-center gap-3 rounded-lg bg-[#F8FAFC] px-3 py-3 text-sm"
                 >
-                  <span className="w-2 h-2 rounded-full bg-white/60 shrink-0" />
+                  <span className="w-2 h-2 rounded-full bg-[#EE4D2D] shrink-0" />
                   <span>{action}</span>
                 </div>
               ))}
@@ -2056,6 +2056,245 @@ function StockHealthSection({
 }
 
 
+
+function RevenueLineChart({
+  daily,
+  money,
+}: {
+  daily: any[];
+  money: (value: number) => string;
+}) {
+  const rows = (daily || []).slice(-30);
+  if (!rows.length) return null;
+
+  const width = 920;
+  const height = 280;
+  const padX = 42;
+  const padTop = 22;
+  const padBottom = 42;
+  const chartW = width - padX * 2;
+  const chartH = height - padTop - padBottom;
+
+  const values = rows.map((item) => Number(item.revenue || 0));
+  const max = Math.max(...values, 1);
+  const min = 0;
+
+  const point = (value: number, index: number) => {
+    const x =
+      padX +
+      (rows.length === 1 ? chartW / 2 : (index / (rows.length - 1)) * chartW);
+    const y = padTop + chartH - ((value - min) / (max - min || 1)) * chartH;
+    return { x, y };
+  };
+
+  const points = values.map(point);
+  const linePath = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+    .join(" ");
+  const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(
+    1
+  )} ${(padTop + chartH).toFixed(1)} L ${points[0].x.toFixed(
+    1
+  )} ${(padTop + chartH).toFixed(1)} Z`;
+
+  const total = values.reduce((sum, value) => sum + value, 0);
+  const avg = total / Math.max(rows.length, 1);
+  const bestIndex = values.indexOf(Math.max(...values));
+
+  return (
+    <div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+        <div className="border border-slate-200 rounded-lg px-4 py-3 bg-white">
+          <div className="text-xs text-slate-500">Média diária</div>
+          <div className="text-lg font-semibold text-slate-900 mt-1">{money(avg)}</div>
+        </div>
+        <div className="border border-slate-200 rounded-lg px-4 py-3 bg-white">
+          <div className="text-xs text-slate-500">Melhor dia</div>
+          <div className="text-lg font-semibold text-slate-900 mt-1">
+            {formatStockDate(rows[bestIndex]?.date)}
+          </div>
+        </div>
+        <div className="border border-slate-200 rounded-lg px-4 py-3 bg-white">
+          <div className="text-xs text-slate-500">Pico de faturamento</div>
+          <div className="text-lg font-semibold text-slate-900 mt-1">
+            {money(values[bestIndex] || 0)}
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full overflow-hidden">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="w-full h-[280px]"
+          role="img"
+          aria-label="Gráfico de faturamento diário"
+        >
+          <defs>
+            <linearGradient id="revenueArea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#EE4D2D" stopOpacity="0.20" />
+              <stop offset="100%" stopColor="#EE4D2D" stopOpacity="0.015" />
+            </linearGradient>
+          </defs>
+
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+            const y = padTop + chartH * ratio;
+            const value = max * (1 - ratio);
+            return (
+              <g key={ratio}>
+                <line
+                  x1={padX}
+                  x2={width - padX}
+                  y1={y}
+                  y2={y}
+                  stroke="#E2E8F0"
+                  strokeWidth="1"
+                />
+                <text
+                  x={padX - 8}
+                  y={y + 4}
+                  textAnchor="end"
+                  fontSize="10"
+                  fill="#94A3B8"
+                >
+                  {value >= 1000 ? `${(value / 1000).toFixed(1)}k` : Math.round(value)}
+                </text>
+              </g>
+            );
+          })}
+
+          <path d={areaPath} fill="url(#revenueArea)" />
+          <path
+            d={linePath}
+            fill="none"
+            stroke="#EE4D2D"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {points.map((p, index) => (
+            <circle
+              key={`${rows[index]?.date}-${index}`}
+              cx={p.x}
+              cy={p.y}
+              r={index === bestIndex ? 4.5 : 2.5}
+              fill="#FFFFFF"
+              stroke="#EE4D2D"
+              strokeWidth={index === bestIndex ? 3 : 2}
+            />
+          ))}
+
+          {rows.map((row, index) => {
+            const show =
+              index === 0 ||
+              index === rows.length - 1 ||
+              index % Math.max(1, Math.ceil(rows.length / 6)) === 0;
+            if (!show) return null;
+            const p = points[index];
+            return (
+              <text
+                key={`label-${row.date}-${index}`}
+                x={p.x}
+                y={height - 12}
+                textAnchor="middle"
+                fontSize="10"
+                fill="#64748B"
+              >
+                {formatStockDate(row.date)}
+              </text>
+            );
+          })}
+        </svg>
+      </div>
+
+      <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+        <span className="w-2.5 h-2.5 rounded-full bg-[#EE4D2D]" />
+        Faturamento diário
+      </div>
+    </div>
+  );
+}
+
+function ProductShareBars({
+  items,
+}: {
+  items: any[];
+}) {
+  const rows = (items || []).slice(0, 6);
+  const max = Math.max(...rows.map((item) => Number(item.units || 0)), 1);
+
+  if (!rows.length) {
+    return <div className="py-12 text-center text-sm text-slate-500">Sem dados no período.</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {rows.map((item, index) => {
+        const units = Number(item.units || 0);
+        const pct = (units / max) * 100;
+        return (
+          <div key={`share-${item.product_id}-${item.variation_id || index}`}>
+            <div className="flex items-center justify-between gap-3 mb-1.5">
+              <div className="text-sm text-slate-700 truncate">
+                <span className="font-semibold text-slate-400 mr-2">#{index + 1}</span>
+                {item.name}
+              </div>
+              <div className="text-sm font-semibold text-slate-900 shrink-0">{units} un.</div>
+            </div>
+            <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-[#EE4D2D]"
+                style={{ width: `${Math.max(4, pct)}%`, opacity: 1 - index * 0.09 }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function AbcDistribution({
+  counts,
+}: {
+  counts: Record<string, number>;
+}) {
+  const total = Math.max((counts.A || 0) + (counts.B || 0) + (counts.C || 0), 1);
+  const rows = [
+    { key: "A", label: "Classe A", value: counts.A || 0, className: "bg-[#EE4D2D]" },
+    { key: "B", label: "Classe B", value: counts.B || 0, className: "bg-amber-400" },
+    { key: "C", label: "Classe C", value: counts.C || 0, className: "bg-slate-400" },
+  ];
+
+  return (
+    <div>
+      <div className="h-4 rounded-full bg-slate-100 overflow-hidden flex">
+        {rows.map((row) => (
+          <div
+            key={row.key}
+            className={row.className}
+            style={{ width: `${(row.value / total) * 100}%` }}
+          />
+        ))}
+      </div>
+      <div className="grid grid-cols-3 gap-3 mt-4">
+        {rows.map((row) => (
+          <div key={row.key} className="border border-slate-200 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <span className={`w-2 h-2 rounded-full ${row.className}`} />
+              {row.label}
+            </div>
+            <div className="text-xl font-semibold text-slate-900 mt-1">{row.value}</div>
+            <div className="text-[11px] text-slate-400 mt-1">
+              {((row.value / total) * 100).toFixed(0)}% dos SKUs
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function SalesSection({
   data,
   money,
@@ -2112,8 +2351,8 @@ function SalesSection({
                 onClick={() => setPeriod(value)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                   period === value
-                    ? "bg-white text-black"
-                    : "bg-[#F1F5F9] text-[#475569] hover:bg-slate-100"
+                    ? "bg-[#EE4D2D] text-white border border-[#EE4D2D] shadow-sm"
+                    : "bg-white text-slate-600 border border-slate-300 hover:border-[#EE4D2D] hover:text-[#EE4D2D]"
                 }`}
               >
                 {value === 1 ? "Hoje" : `${value} dias`}
@@ -2139,36 +2378,11 @@ function SalesSection({
           </p>
 
           {sales.daily.length ? (
-            <div className="mt-6 space-y-3">
-              {sales.daily.map((day: any) => {
-                const width = Math.max(
-                  2,
-                  (Number(day.revenue || 0) / maxDailyRevenue) * 100
-                );
-
-                return (
-                  <div key={day.date} className="grid grid-cols-[80px_1fr_auto] items-center gap-3">
-                    <span className="text-xs text-[#64748B]">
-                      {formatStockDate(day.date)}
-                    </span>
-                    <div className="h-8 rounded-lg bg-[#F8FAFC] overflow-hidden">
-                      <div
-                        className="h-full rounded-lg bg-slate-100"
-                        style={{ width: `${width}%` }}
-                      />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold">{money(Number(day.revenue || 0))}</div>
-                      <div className="text-[10px] text-[#64748B]">
-                        {Number(day.orders || 0)} pedido(s)
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="mt-6">
+              <RevenueLineChart daily={sales.daily} money={money} />
             </div>
           ) : (
-            <div className="py-16 text-center text-sm text-[#64748B]">
+            <div className="py-16 text-center text-sm text-slate-500">
               Nenhuma venda encontrada neste período.
             </div>
           )}
@@ -2207,6 +2421,38 @@ function SalesSection({
                 Sem produtos vendidos no período.
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="bg-white border border-slate-200 rounded-lg p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="font-semibold text-lg text-slate-900">Participação dos produtos</h3>
+              <p className="text-sm text-slate-500 mt-1">
+                Comparação visual das unidades vendidas pelos principais SKUs.
+              </p>
+            </div>
+            <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-orange-50 text-[#EE4D2D]">
+              Top 6
+            </span>
+          </div>
+          <div className="mt-6">
+            <ProductShareBars items={sales.topProducts} />
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-lg p-6">
+          <h3 className="font-semibold text-lg text-slate-900">Curva ABC do portfólio</h3>
+          <p className="text-sm text-slate-500 mt-1">
+            Distribuição dos SKUs por relevância comercial para priorização de estoque.
+          </p>
+          <div className="mt-7">
+            <AbcDistribution counts={abcCounts} />
+          </div>
+          <div className="mt-5 pt-4 border-t border-slate-200 text-xs text-slate-500">
+            Classe A concentra os itens de maior relevância; B representa importância intermediária; C reúne itens de menor participação.
           </div>
         </div>
       </div>
