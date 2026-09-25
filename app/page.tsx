@@ -2057,6 +2057,42 @@ function StockHealthSection({
 
 
 
+
+function businessPriority(stock: number, minStock: number) {
+  const minimum = Math.max(Number(minStock || 0), 1);
+  const ratio = Number(stock || 0) / minimum;
+
+  if (ratio < 0.45) {
+    return {
+      label: "Crítica",
+      badge: "bg-red-50 text-red-700 border-red-200",
+      order: 0,
+    };
+  }
+
+  if (ratio < 0.8) {
+    return {
+      label: "Alta",
+      badge: "bg-orange-50 text-orange-700 border-orange-200",
+      order: 1,
+    };
+  }
+
+  if (ratio < 1.15) {
+    return {
+      label: "Média",
+      badge: "bg-amber-50 text-amber-700 border-amber-200",
+      order: 2,
+    };
+  }
+
+  return {
+    label: "Normal",
+    badge: "bg-slate-50 text-slate-600 border-slate-200",
+    order: 3,
+  };
+}
+
 function RevenueLineChart({
   daily,
   money,
@@ -2747,7 +2783,7 @@ Quantidade: ${Number(variation.suggested_purchase || 0)} un.
 ${costText}
 Prioridade: ${
         variation.purchase_priority === "URGENTE"
-          ? "Urgente"
+          ? "Alta"
           : variation.purchase_priority === "ALTA"
             ? "Alta"
             : "Normal"
@@ -2866,7 +2902,7 @@ ${lines.join("\\n\\n")}`;
                           }`}
                         >
                           {variation.purchase_priority === "URGENTE"
-                            ? "Urgente"
+                            ? "Alta"
                             : variation.purchase_priority === "ALTA"
                               ? "Alta"
                               : "Normal"}
@@ -3020,7 +3056,7 @@ ${lines.join("\\n\\n")}`;
                           }`}
                         >
                           {variation.purchase_priority === "URGENTE"
-                            ? "Urgente"
+                            ? "Alta"
                             : variation.purchase_priority === "ALTA"
                               ? "Alta"
                               : "Normal"}
@@ -3118,7 +3154,7 @@ ${lines.join("\\n\\n")}`;
                         }`}
                       >
                         {variation.purchase_priority === "URGENTE"
-                          ? "Urgente"
+                          ? "Alta"
                           : variation.purchase_priority === "ALTA"
                             ? "Alta"
                             : "Normal"}
@@ -3307,7 +3343,7 @@ function StockHistorySection({ data }: { data: DashboardData }) {
       <div className="p-5 border-b border-[#E2E8F0]">
         <h3 className="font-semibold text-lg">Histórico de estoque</h3>
         <p className="text-sm text-[#64748B] mt-1">
-          Snapshots diários salvos nas sincronizações. O gráfico ganha pontos novos a cada dia.
+          Evolução do saldo disponível por SKU nos últimos 30 dias.
         </p>
       </div>
 
@@ -3417,7 +3453,7 @@ function StockSettingsCard({
     parsedSafety <= 365;
 
   return (
-    <section className="bg-[#FFFFFF] border border-slate-200 rounded-lg p-6 mb-5">
+    <section className="bg-[#FFFFFF] border border-slate-200 rounded-md p-4 mb-5">
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
         <div>
           <h2 className="text-lg font-semibold">
@@ -3866,7 +3902,7 @@ function MetricCard({
   subtitle: string;
 }) {
   return (
-    <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg p-5">
+    <div className="bg-[#FFFFFF] border border-slate-200 rounded-md p-4">
 
       <p className="text-sm text-[#64748B]">
         {title}
