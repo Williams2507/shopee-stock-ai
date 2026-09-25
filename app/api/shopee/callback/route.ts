@@ -2,40 +2,95 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
+const SHOPEE_HOST =
+  "https://openplatform.sandbox.test-stable.shopee.sg";
+
+function dashboardUrl(request: Request, params?: Record<string, string>) {
+  const url = new URL("/", request.url);
+
+  for (const [key, value] of Object.entries(params || {})) {
+    url.searchParams.set(key, value);
+  }
+
+  return url;
+}
+
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
-
     const code = url.searchParams.get("code");
     const shopId = url.searchParams.get("shop_id");
+
+    const nonce = request.headers
+      .get("cookie")
+      ?.split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith("shopee_connect="))
+      ?.slice("shopee_connect=".length);
+
+    if (!code || !shopId || !nonce) {
+      return NextResponse.redirect(
+        dashboardUrl(request, {
+          shopee_error: "authorization_missing",
+        })
+      );
+    }
+
+    const nonceHash = crypto
+      .createHash("sha256")
+      .update(decodeURIComponent(nonce))
+      .digest("hex");
+
+    const { data: connection, error: connectionError } =
+      await supabaseAdmin
+        .from("shopee_connections")
+        .select("id, user_id, expires_at, used_at")
+        .eq("nonce_hash", nonceHash)
+        .maybeSingle();
+
+    if (
+      connectionError ||
+      !connection ||
+      connection.used_at ||
+      new Date(connection.expires_at).getTime() <= Date.now()
+    ) {
+      return NextResponse.redirect(
+        dashboardUrl(request, {
+          shopee_error: "connection_expired",
+        })
+      );
+    }
 
     const partnerId = process.env.SHOPEE_PARTNER_ID;
     const partnerKey = process.env.SHOPEE_PARTNER_KEY;
 
-    if (!code || !shopId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "code ou shop_id não informado pela Shopee.",
-        },
-        { status: 400 }
-      );
-    }
-
     if (!partnerId || !partnerKey) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Credenciais da Shopee não configuradas.",
-        },
-        { status: 500 }
+      throw new Error("Credenciais da Shopee não configuradas.");
+    }
+
+    // Impede que uma conta assuma uma loja já pertencente a outra conta.
+    const { data: ownedStore, error: ownedStoreError } =
+      await supabaseAdmin
+        .from("stores")
+        .select("id, user_id")
+        .eq("shop_id", Number(shopId))
+        .maybeSingle();
+
+    if (ownedStoreError) throw ownedStoreError;
+
+    if (
+      ownedStore?.user_id &&
+      ownedStore.user_id !== connection.user_id
+    ) {
+      return NextResponse.redirect(
+        dashboardUrl(request, {
+          shopee_error: "shop_already_connected",
+        })
       );
     }
 
-    // 1. Trocar o code pelos tokens
     const path = "/api/v2/auth/token/get";
     const timestamp = Math.floor(Date.now() / 1000);
-
     const baseString = `${partnerId}${path}${timestamp}`;
 
     const sign = crypto
@@ -43,13 +98,12 @@ export async function GET(request: Request) {
       .update(baseString)
       .digest("hex");
 
-    const tokenUrl =
-      `https://openplatform.sandbox.test-stable.shopee.sg${path}` +
-      `?partner_id=${partnerId}` +
-      `&timestamp=${timestamp}` +
-      `&sign=${sign}`;
+    const tokenUrl = new URL(`${SHOPEE_HOST}${path}`);
+    tokenUrl.searchParams.set("partner_id", partnerId);
+    tokenUrl.searchParams.set("timestamp", timestamp.toString());
+    tokenUrl.searchParams.set("sign", sign);
 
-    const tokenResponse = await fetch(tokenUrl, {
+    const tokenResponse = await fetch(tokenUrl.toString(), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -64,87 +118,91 @@ export async function GET(request: Request) {
     const tokenData = await tokenResponse.json();
 
     if (!tokenResponse.ok || tokenData.error) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: tokenData.error || "Erro ao obter token da Shopee.",
-          message: tokenData.message,
-        },
-        { status: 400 }
+      console.error("Erro de token Shopee:", tokenData);
+
+      return NextResponse.redirect(
+        dashboardUrl(request, {
+          shopee_error: "token_exchange_failed",
+        })
       );
     }
 
-    // 2. Calcular expiração do access token
     const expireIn = Number(tokenData.expire_in || 14400);
-
     const tokenExpiresAt = new Date(
       Date.now() + expireIn * 1000
     ).toISOString();
 
-    // 3. Atualizar somente uma loja que já tenha proprietário.
-    // A associação de uma NOVA loja ao usuário será feita com state assinado
-    // no próximo passo do fluxo OAuth.
-    const { data: existingStore, error: existingStoreError } =
-      await supabaseAdmin
+    let store;
+
+    if (ownedStore) {
+      const { data, error } = await supabaseAdmin
         .from("stores")
-        .select("id, user_id")
-        .eq("shop_id", Number(shopId))
-        .maybeSingle();
+        .update({
+          user_id: connection.user_id,
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          token_expires_at: tokenExpiresAt,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", ownedStore.id)
+        .eq("user_id", connection.user_id)
+        .select("id, shop_id")
+        .single();
 
-    if (existingStoreError) throw existingStoreError;
+      if (error) throw error;
+      store = data;
+    } else {
+      const { data, error } = await supabaseAdmin
+        .from("stores")
+        .insert({
+          user_id: connection.user_id,
+          shop_id: Number(shopId),
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          token_expires_at: tokenExpiresAt,
+          updated_at: new Date().toISOString(),
+        })
+        .select("id, shop_id")
+        .single();
 
-    if (!existingStore?.user_id) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Esta loja ainda não está vinculada a um usuário. Inicie a conexão pelo painel.",
-        },
-        { status: 403 }
-      );
+      if (error) throw error;
+      store = data;
     }
 
-    const { data: store, error: storeError } = await supabaseAdmin
-      .from("stores")
+    const { error: consumeError } = await supabaseAdmin
+      .from("shopee_connections")
       .update({
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
-        token_expires_at: tokenExpiresAt,
-        updated_at: new Date().toISOString(),
+        used_at: new Date().toISOString(),
       })
-      .eq("id", existingStore.id)
-      .select()
-      .single();
+      .eq("id", connection.id)
+      .is("used_at", null);
 
-    if (storeError) {
-      console.error("Erro ao salvar loja:", storeError);
+    if (consumeError) throw consumeError;
 
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Token obtido, mas não foi possível salvar a loja.",
-          details: storeError.message,
-        },
-        { status: 500 }
-      );
-    }
+    const response = NextResponse.redirect(
+      dashboardUrl(request, {
+        shopee_connected: "1",
+      })
+    );
 
-    // 4. Nunca devolver os tokens para o navegador
-    return NextResponse.json({
-      success: true,
-      message: "Loja Shopee conectada e salva com sucesso!",
-      shopId: store.shop_id,
-      tokenExpiresAt: store.token_expires_at,
+    response.cookies.set("shopee_connect", "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
     });
+
+    console.log(`Loja ${store.shop_id} conectada com sucesso.`);
+
+    return response;
   } catch (error) {
     console.error("Erro no callback Shopee:", error);
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Erro interno ao processar autorização da Shopee.",
-      },
-      { status: 500 }
+    return NextResponse.redirect(
+      dashboardUrl(request, {
+        shopee_error: "internal_error",
+      })
     );
   }
 }
