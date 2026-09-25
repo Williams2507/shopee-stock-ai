@@ -2067,122 +2067,165 @@ function RevenueLineChart({
   const rows = (daily || []).slice(-30);
   if (!rows.length) return null;
 
-  const width = 920;
-  const height = 280;
-  const padX = 42;
-  const padTop = 22;
-  const padBottom = 42;
-  const chartW = width - padX * 2;
-  const chartH = height - padTop - padBottom;
+  const width = 1040;
+  const height = 330;
+  const left = 56;
+  const right = 22;
+  const top = 24;
+  const bottom = 46;
+  const chartW = width - left - right;
+  const chartH = height - top - bottom;
 
-  const values = rows.map((item) => Number(item.revenue || 0));
-  const max = Math.max(...values, 1);
-  const min = 0;
+  const revenue = rows.map((item) => Number(item.revenue || 0));
+  const orders = rows.map((item) => Number(item.orders || item.order_count || 0));
+  const units = rows.map((item) => Number(item.units || item.units_sold || 0));
 
-  const point = (value: number, index: number) => {
-    const x =
-      padX +
-      (rows.length === 1 ? chartW / 2 : (index / (rows.length - 1)) * chartW);
-    const y = padTop + chartH - ((value - min) / (max - min || 1)) * chartH;
-    return { x, y };
+  const maxRevenue = Math.max(...revenue, 1);
+  const maxVolume = Math.max(...orders, ...units, 1);
+
+  const x = (i: number) =>
+    left + (rows.length <= 1 ? chartW / 2 : (i / (rows.length - 1)) * chartW);
+
+  const yRevenue = (v: number) => top + chartH - (v / maxRevenue) * chartH;
+  const yVolume = (v: number) => top + chartH - (v / maxVolume) * chartH;
+
+  const smoothPath = (values: number[], yFn: (v: number) => number) => {
+    const pts = values.map((v, i) => ({ x: x(i), y: yFn(v) }));
+    if (pts.length < 2) return pts.length ? `M ${pts[0].x} ${pts[0].y}` : "";
+
+    let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(pts.length - 1, i + 2)];
+
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+      d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+    }
+    return d;
   };
 
-  const points = values.map(point);
-  const linePath = points
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
-    .join(" ");
-  const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(
-    1
-  )} ${(padTop + chartH).toFixed(1)} L ${points[0].x.toFixed(
-    1
-  )} ${(padTop + chartH).toFixed(1)} Z`;
+  const revenuePath = smoothPath(revenue, yRevenue);
+  const ordersPath = smoothPath(orders, yVolume);
+  const unitsPath = smoothPath(units, yVolume);
 
-  const total = values.reduce((sum, value) => sum + value, 0);
+  const total = revenue.reduce((sum, value) => sum + value, 0);
   const avg = total / Math.max(rows.length, 1);
-  const bestIndex = values.indexOf(Math.max(...values));
+  const bestIndex = revenue.indexOf(Math.max(...revenue));
+
+  const hasOrders = orders.some((v) => v > 0);
+  const hasUnits = units.some((v) => v > 0);
 
   return (
     <div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-        <div className="border border-slate-200 rounded-lg px-4 py-3 bg-white">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        <div className="border border-slate-200 rounded-md px-4 py-3 bg-white">
           <div className="text-xs text-slate-500">Média diária</div>
           <div className="text-lg font-semibold text-slate-900 mt-1">{money(avg)}</div>
         </div>
-        <div className="border border-slate-200 rounded-lg px-4 py-3 bg-white">
+        <div className="border border-slate-200 rounded-md px-4 py-3 bg-white">
           <div className="text-xs text-slate-500">Dia de maior venda</div>
           <div className="text-lg font-semibold text-slate-900 mt-1">
             {formatStockDate(rows[bestIndex]?.date)}
           </div>
         </div>
-        <div className="border border-slate-200 rounded-lg px-4 py-3 bg-white">
+        <div className="border border-slate-200 rounded-md px-4 py-3 bg-white">
           <div className="text-xs text-slate-500">Maior faturamento diário</div>
           <div className="text-lg font-semibold text-slate-900 mt-1">
-            {money(values[bestIndex] || 0)}
+            {money(revenue[bestIndex] || 0)}
           </div>
         </div>
+      </div>
+
+      <div className="flex items-center justify-end gap-5 mb-2 text-xs sm:text-sm text-slate-600">
+        <span className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#EE4D2D]" />
+          Faturamento
+        </span>
+        {hasOrders && (
+          <span className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#2F80ED]" />
+            Pedidos
+          </span>
+        )}
+        {hasUnits && (
+          <span className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#5B6F95]" />
+            Unidades
+          </span>
+        )}
       </div>
 
       <div className="w-full overflow-hidden">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="w-full h-[280px]"
+          className="w-full h-[330px]"
           role="img"
-          aria-label="Gráfico de faturamento diário"
+          aria-label="Desempenho de vendas por dia"
         >
-          <defs>
-            <linearGradient id="revenueArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#EE4D2D" stopOpacity="0.20" />
-              <stop offset="100%" stopColor="#EE4D2D" stopOpacity="0.015" />
-            </linearGradient>
-          </defs>
-
-          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-            const y = padTop + chartH * ratio;
-            const value = max * (1 - ratio);
+          {[0, 0.2, 0.4, 0.6, 0.8, 1].map((ratio) => {
+            const yy = top + chartH * ratio;
+            const value = maxRevenue * (1 - ratio);
             return (
               <g key={ratio}>
                 <line
-                  x1={padX}
-                  x2={width - padX}
-                  y1={y}
-                  y2={y}
-                  stroke="#E2E8F0"
+                  x1={left}
+                  x2={width - right}
+                  y1={yy}
+                  y2={yy}
+                  stroke="#D9E2F1"
                   strokeWidth="1"
                 />
                 <text
-                  x={padX - 8}
-                  y={y + 4}
+                  x={left - 10}
+                  y={yy + 4}
                   textAnchor="end"
                   fontSize="10"
                   fill="#94A3B8"
                 >
-                  {value >= 1000 ? `${(value / 1000).toFixed(1)}k` : Math.round(value)}
+                  {value >= 1000
+                    ? `${(value / 1000).toFixed(1)}k`
+                    : Math.round(value)}
                 </text>
               </g>
             );
           })}
 
-          <path d={areaPath} fill="url(#revenueArea)" />
           <path
-            d={linePath}
+            d={revenuePath}
             fill="none"
             stroke="#EE4D2D"
-            strokeWidth="3"
+            strokeWidth="2.6"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
 
-          {points.map((p, index) => (
-            <circle
-              key={`${rows[index]?.date}-${index}`}
-              cx={p.x}
-              cy={p.y}
-              r={index === bestIndex ? 4.5 : 2.5}
-              fill="#FFFFFF"
-              stroke="#EE4D2D"
-              strokeWidth={index === bestIndex ? 3 : 2}
+          {hasOrders && (
+            <path
+              d={ordersPath}
+              fill="none"
+              stroke="#2F80ED"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
-          ))}
+          )}
+
+          {hasUnits && (
+            <path
+              d={unitsPath}
+              fill="none"
+              stroke="#5B6F95"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
 
           {rows.map((row, index) => {
             const show =
@@ -2190,11 +2233,11 @@ function RevenueLineChart({
               index === rows.length - 1 ||
               index % Math.max(1, Math.ceil(rows.length / 6)) === 0;
             if (!show) return null;
-            const p = points[index];
+
             return (
               <text
                 key={`label-${row.date}-${index}`}
-                x={p.x}
+                x={x(index)}
                 y={height - 12}
                 textAnchor="middle"
                 fontSize="10"
@@ -2205,11 +2248,6 @@ function RevenueLineChart({
             );
           })}
         </svg>
-      </div>
-
-      <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-        <span className="w-2.5 h-2.5 rounded-full bg-[#EE4D2D]" />
-        Faturamento diário
       </div>
     </div>
   );
@@ -2374,7 +2412,7 @@ function SalesSection({
         <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg p-6">
           <h3 className="font-semibold text-lg">Vendas por dia</h3>
           <p className="text-sm text-[#64748B] mt-1">
-            Faturamento diário dentro do período selecionado.
+            Evolução das vendas no período selecionado.
           </p>
 
           {sales.daily.length ? (
