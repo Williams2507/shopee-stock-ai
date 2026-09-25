@@ -663,7 +663,7 @@ export default function Home() {
     return (
       <main className="min-h-screen bg-[#F8FAFC] text-[#0F172A] p-8">
         <div className="max-w-3xl mx-auto">
-          <div className="bg-[#FFFFFF] border border-[#CBD5E1] rounded-2xl p-6">
+          <div className="bg-[#FFFFFF] border border-[#CBD5E1] rounded-lg p-6">
             <p className="text-sm text-[#64748B]">Shopee Stock AI</p>
             <h1 className="text-2xl font-bold mt-1">Conecte sua loja Shopee</h1>
             <p className="text-[#475569] mt-3">
@@ -680,21 +680,21 @@ export default function Home() {
               <button
                 onClick={connectShopee}
                 disabled={connectingShopee}
-                className="px-5 py-2.5 rounded-xl bg-[#EE4D2D] text-white font-semibold hover:bg-orange-400 disabled:opacity-50 transition"
+                className="px-5 py-2.5 rounded-md bg-[#EE4D2D] text-white font-semibold hover:bg-orange-400 disabled:opacity-50 transition"
               >
                 {connectingShopee ? "Conectando..." : "Conectar Shopee"}
               </button>
 
               <button
                 onClick={() => loadDashboard()}
-                className="px-5 py-2.5 rounded-xl bg-[#F1F5F9] text-[#334155] font-semibold hover:bg-slate-100 transition"
+                className="px-5 py-2.5 rounded-md bg-[#F1F5F9] text-[#334155] font-semibold hover:bg-slate-100 transition"
               >
                 Tentar novamente
               </button>
 
               <button
                 onClick={signOut}
-                className="px-5 py-2.5 rounded-xl bg-[#F1F5F9] text-[#334155] font-semibold hover:bg-slate-100 transition"
+                className="px-5 py-2.5 rounded-md bg-[#F1F5F9] text-[#334155] font-semibold hover:bg-slate-100 transition"
               >
                 Sair
               </button>
@@ -766,11 +766,11 @@ export default function Home() {
       <div className="min-h-screen lg:grid lg:grid-cols-[250px_minmax(0,1fr)]">
         <aside className="hidden lg:flex lg:flex-col border-r border-[#E2E8F0] bg-[#FFFFFF] px-4 py-6">
           <div className="flex items-center gap-3 px-3 mb-8">
-            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-slate-900 grid place-items-center font-black shadow-sm shadow-orange-200">
+            <div className="h-11 w-11 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 text-slate-900 grid place-items-center font-bold shadow-sm shadow-orange-200">
               S
             </div>
             <div>
-              <div className="font-extrabold text-orange-600 leading-tight">Shopee Stock AI</div>
+              <div className="font-extrabold text-[#EE4D2D] leading-tight">Shopee Stock AI</div>
               <div className="text-[11px] text-[#64748B] mt-0.5">Gestão inteligente</div>
             </div>
           </div>
@@ -783,10 +783,10 @@ export default function Home() {
                   setActiveTab(item.id);
                   if (item.id === "reviews") loadReviews();
                 }}
-                className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-left transition ${
+                className={`w-full flex items-center gap-3 rounded-md px-4 py-3 text-sm font-semibold text-left transition ${
                   activeTab === item.id
                     ? "bg-gradient-to-r from-[#EE4D2D] to-[#EE4D2D] text-white shadow-sm"
-                    : "text-[#475569] hover:bg-[#FFF1E8] hover:text-orange-600"
+                    : "text-[#475569] hover:bg-[#FFF1E8] hover:text-[#EE4D2D]"
                 }`}
               >
                 <span className="text-lg w-5 text-center">{item.icon}</span>
@@ -798,7 +798,7 @@ export default function Home() {
           <div className="mt-auto pt-6 border-t border-[#E2E8F0]">
             <button
               onClick={signOut}
-              className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-[#475569] hover:bg-[#F8FAFC]"
+              className="w-full flex items-center gap-3 rounded-md px-4 py-3 text-sm font-semibold text-[#475569] hover:bg-[#F8FAFC]"
             >
               <span className="text-lg">↪</span>
               Sair
@@ -810,7 +810,7 @@ export default function Home() {
           <header className="sticky top-0 z-20 border-b border-[#E2E8F0] bg-[#FFFFFF]/95 backdrop-blur px-4 md:px-7 py-4">
             <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="lg:hidden h-10 w-10 shrink-0 rounded-xl bg-[#EE4D2D] text-white grid place-items-center font-black">S</div>
+                <div className="lg:hidden h-10 w-10 shrink-0 rounded-md bg-[#EE4D2D] text-white grid place-items-center font-bold">S</div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-bold">Shopee</span>
@@ -826,13 +826,13 @@ export default function Home() {
                 <button
                   onClick={connectShopee}
                   disabled={connectingShopee}
-                  className="px-4 py-2.5 rounded-xl border border-orange-200 bg-orange-50 text-orange-600 text-sm font-bold hover:bg-orange-100 disabled:opacity-50 transition"
+                  className="px-4 py-2.5 rounded-md border border-orange-200 bg-slate-50 text-[#EE4D2D] text-sm font-bold hover:bg-slate-100 disabled:opacity-50 transition"
                 >
                   {connectingShopee ? "Conectando..." : "Gerenciar conexão"}
                 </button>
                 <button
                   onClick={() => loadDashboard()}
-                  className="px-4 py-2.5 rounded-xl bg-[#EE4D2D] text-white text-sm font-bold hover:bg-[#D93F22] shadow-sm transition"
+                  className="px-4 py-2.5 rounded-md bg-[#EE4D2D] text-white text-sm font-bold hover:bg-[#D93F22] shadow-sm transition"
                 >
                   ↻ Atualizar dados
                 </button>
@@ -847,7 +847,7 @@ export default function Home() {
                     setActiveTab(item.id);
                     if (item.id === "reviews") loadReviews();
                   }}
-                  className={`shrink-0 px-3 py-2 rounded-xl text-xs font-bold ${
+                  className={`shrink-0 px-3 py-2 rounded-md text-xs font-bold ${
                     activeTab === item.id
                       ? "bg-[#EE4D2D] text-white"
                       : "bg-[#F1F5F9] text-[#475569]"
@@ -861,7 +861,7 @@ export default function Home() {
 
           <div className="p-4 md:p-7">
             {connectionMessage && (
-              <div className="mb-5 rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm text-orange-700">
+              <div className="mb-5 rounded-md border border-orange-100 bg-slate-50 px-4 py-3 text-sm text-orange-700">
                 {connectionMessage}
               </div>
             )}
@@ -870,8 +870,8 @@ export default function Home() {
               <>
                 <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
                   <div>
-                    <p className="text-sm font-semibold text-orange-500">Painel operacional</p>
-                    <h1 className="text-3xl md:text-4xl font-black tracking-tight mt-1 capitalize">
+                    <p className="text-sm font-semibold text-[#EE4D2D]">Painel operacional</p>
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-normal mt-1 capitalize">
                       Olá, {firstName}!
                     </h1>
                     <p className="text-[#475569] mt-2">Aqui está o resumo da sua operação na Shopee.</p>
@@ -882,7 +882,7 @@ export default function Home() {
                       <button
                         key={value}
                         onClick={() => setPeriod(value)}
-                        className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition ${
+                        className={`px-3.5 py-2 rounded-md text-xs font-bold border transition ${
                           period === value
                             ? "bg-[#EE4D2D] border-[#EE4D2D] text-white"
                             : "bg-[#FFFFFF] border-slate-200 text-[#475569] hover:border-orange-200"
@@ -915,7 +915,7 @@ export default function Home() {
                         <h2 className="font-extrabold text-lg">Performance</h2>
                         <p className="text-sm text-[#64748B]">Indicadores do período selecionado</p>
                       </div>
-                      <span className="text-xs font-bold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-lg">
+                      <span className="text-xs font-bold text-[#EE4D2D] bg-slate-50 px-3 py-1.5 rounded-lg">
                         {period === 1 ? "Hoje" : `${period} dias`}
                       </span>
                     </div>
@@ -938,7 +938,7 @@ export default function Home() {
                       <QuickAction
                         title="Conectar Shopee"
                         subtitle="Gerenciar loja"
-                        className="bg-orange-50 text-orange-600"
+                        className="bg-slate-50 text-[#EE4D2D]"
                         onClick={connectShopee}
                       />
                       <QuickAction
@@ -996,7 +996,7 @@ export default function Home() {
                             {totalSuggestedPurchase} un. sugeridas
                           </span>
                           {riskItems > 0 && (
-                            <span className="px-3 py-1.5 rounded-lg bg-orange-50 text-xs font-bold text-orange-600">
+                            <span className="px-3 py-1.5 rounded-lg bg-slate-50 text-xs font-bold text-[#EE4D2D]">
                               {riskItems} com risco antes da chegada
                             </span>
                           )}
@@ -1031,7 +1031,7 @@ export default function Home() {
                               );
 
                               return (
-                                <tr key={variation.id} className="border-b border-[#E2E8F0] hover:bg-orange-50/60">
+                                <tr key={variation.id} className="border-b border-[#E2E8F0] hover:bg-slate-50/60">
                                   <td className="px-5 py-4">
                                     <div className="font-semibold text-sm">{product?.name || "Produto"}</div>
                                     <div className="text-xs text-[#64748B] mt-1">{variation.name}</div>
@@ -1092,7 +1092,7 @@ export default function Home() {
                         {data.lowStock.length ? data.lowStock.slice(0, 8).map((variation) => {
                           const product = data.products.find((p) => p.id === variation.product_id);
                           return (
-                            <div key={variation.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-red-50/60">
+                            <div key={variation.id} className="flex items-center justify-between gap-3 p-3 rounded-md bg-red-50/60">
                               <div className="min-w-0">
                                 <div className="font-semibold text-sm truncate">{product?.name || "Produto"}</div>
                                 <div className="text-xs text-[#64748B] truncate">{variation.name}</div>
@@ -1104,7 +1104,7 @@ export default function Home() {
                           );
                         }) : (
                           <div className="py-10 text-center">
-                            <div className="h-11 w-11 mx-auto rounded-full bg-emerald-50 text-emerald-600 grid place-items-center font-black">✓</div>
+                            <div className="h-11 w-11 mx-auto rounded-full bg-emerald-50 text-emerald-600 grid place-items-center font-bold">✓</div>
                             <p className="font-bold mt-3">Tudo tranquilo</p>
                             <p className="text-sm text-[#64748B] mt-1">Nenhum item com estoque baixo.</p>
                           </div>
@@ -1165,7 +1165,7 @@ function LightMetricCard({
   accent: "orange" | "blue" | "green" | "purple";
 }) {
   const tones = {
-    orange: "bg-orange-50 text-orange-500",
+    orange: "bg-slate-50 text-[#EE4D2D]",
     blue: "bg-blue-50 text-blue-500",
     green: "bg-emerald-50 text-emerald-600",
     purple: "bg-violet-50 text-violet-600",
@@ -1176,9 +1176,9 @@ function LightMetricCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-[#475569]">{title}</p>
-          <p className="text-2xl font-black tracking-tight mt-3">{value}</p>
+          <p className="text-2xl font-bold tracking-normal mt-3">{value}</p>
         </div>
-        <div className={`h-11 min-w-11 px-2 rounded-2xl grid place-items-center text-sm font-black ${tones[accent]}`}>
+        <div className={`h-11 min-w-11 px-2 rounded-lg grid place-items-center text-sm font-bold ${tones[accent]}`}>
           {icon}
         </div>
       </div>
@@ -1193,14 +1193,14 @@ function LightMiniCard({ title, value }: { title: string; value: string }) {
   return (
     <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg px-5 py-4 shadow-sm">
       <p className="text-xs font-semibold text-[#64748B]">{title}</p>
-      <p className="text-xl font-black mt-1">{value}</p>
+      <p className="text-xl font-bold mt-1">{value}</p>
     </div>
   );
 }
 
 function LightStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-[#F8FAFC] p-4">
+    <div className="rounded-md bg-[#F8FAFC] p-4">
       <p className="text-xs font-semibold text-[#64748B]">{label}</p>
       <p className="font-extrabold mt-1">{value}</p>
     </div>
@@ -1221,7 +1221,7 @@ function QuickAction({
   return (
     <button
       onClick={onClick}
-      className={`rounded-xl p-4 text-left transition hover:-translate-y-0.5 ${className}`}
+      className={`rounded-md p-4 text-left transition hover:-translate-y-0.5 ${className}`}
     >
       <div className="font-extrabold text-sm">{title}</div>
       <div className="text-xs opacity-70 mt-1">{subtitle}</div>
@@ -1499,7 +1499,7 @@ function StockTrendSection({
       </div>
 
       {hasEnoughHistory ? (
-        <div className="mt-6 rounded-xl bg-white border border-slate-200 p-4 overflow-x-auto">
+        <div className="mt-6 rounded-md bg-white border border-slate-200 p-4 overflow-x-auto">
           <svg
             viewBox={`0 0 ${chartWidth} ${chartHeight}`}
             className="w-full min-w-[700px] h-[260px]"
@@ -1570,7 +1570,7 @@ function StockTrendSection({
           </svg>
         </div>
       ) : (
-        <div className="mt-6 rounded-xl bg-white border border-slate-200 py-12 text-center">
+        <div className="mt-6 rounded-md bg-white border border-slate-200 py-12 text-center">
           <div className="font-medium">Histórico insuficiente</div>
           <div className="text-sm text-[#64748B] mt-1">
             São necessários pelo menos 2 snapshots diários para mostrar uma tendência.
@@ -1614,7 +1614,7 @@ function AlertsCenter({
 
     if (level === "ATENCAO") {
       return {
-        badge: "bg-orange-50 text-orange-600",
+        badge: "bg-slate-50 text-[#EE4D2D]",
         border: "border-orange-500/10",
         label: "Atenção",
       };
@@ -1632,13 +1632,13 @@ function AlertsCenter({
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-semibold">Central de alertas</h2>
+            <h2 className="text-xl font-semibold">Pendências operacionais</h2>
             <span className="px-2.5 py-1 rounded-lg bg-[#F1F5F9] text-xs font-semibold">
               {alerts.total}
             </span>
           </div>
           <p className="text-sm text-[#64748B] mt-1">
-            Avisos operacionais gerados pelos dados de estoque e reposição.
+            Itens que requerem acompanhamento da operação.
           </p>
         </div>
 
@@ -1646,7 +1646,7 @@ function AlertsCenter({
           <span className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600">
             {alerts.critical} crítico(s)
           </span>
-          <span className="px-3 py-1.5 rounded-lg bg-orange-50 text-orange-600">
+          <span className="px-3 py-1.5 rounded-lg bg-slate-50 text-[#EE4D2D]">
             {alerts.attention} atenção
           </span>
           <span className="px-3 py-1.5 rounded-lg bg-[#F1F5F9] text-[#475569]">
@@ -1669,7 +1669,7 @@ function AlertsCenter({
             return (
               <div
                 key={alert.id}
-                className={`rounded-xl border ${style.border} bg-[#F8FAFC] p-4`}
+                className={`rounded-md border ${style.border} bg-[#F8FAFC] p-4`}
               >
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                   <div className="min-w-0">
@@ -1699,7 +1699,7 @@ function AlertsCenter({
                   </div>
 
                   <div className="md:text-right shrink-0">
-                    <div className="text-xs text-[#64748B]">Ação sugerida</div>
+                    <div className="text-xs text-[#64748B]">Próxima ação</div>
                     <div className="text-sm font-semibold mt-1">
                       {alert.action}
                     </div>
@@ -1715,7 +1715,7 @@ function AlertsCenter({
           })}
         </div>
       ) : (
-        <div className="mt-6 py-10 rounded-xl bg-[#F8FAFC] text-center">
+        <div className="mt-6 py-10 rounded-md bg-[#F8FAFC] text-center">
           <div className="font-medium">Nenhum alerta ativo</div>
           <div className="text-sm text-[#64748B] mt-1">
             Não há nenhuma ação crítica identificada com os dados disponíveis.
@@ -1772,14 +1772,14 @@ function ExecutiveInsights({
     <section className="bg-[#FFFFFF] border border-slate-200 rounded-lg p-6 mb-5">
       <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold">Painel executivo</h2>
+          <h2 className="text-xl font-semibold">Visão geral</h2>
           <p className="text-sm text-[#64748B] mt-1">
-            Resumo do período e das decisões de estoque que exigem atenção.
+            Indicadores consolidados de vendas, estoque e necessidade de reposição.
           </p>
         </div>
 
         <span className="px-3 py-1.5 rounded-lg bg-[#F1F5F9] text-xs text-[#475569]">
-          Estoque previsto com janela fixa de 30 dias
+          Projeção de estoque · 30 dias
         </span>
       </div>
 
@@ -1791,7 +1791,7 @@ function ExecutiveInsights({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
-        <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+        <div className="rounded-lg bg-white border border-slate-200 p-4">
           <div className="text-xs font-medium text-red-600">SKUs em risco</div>
           <div className="text-2xl font-bold mt-1">{insights.riskSkus}</div>
           <div className="text-xs text-[#64748B] mt-2">
@@ -1799,16 +1799,16 @@ function ExecutiveInsights({
           </div>
         </div>
 
-        <div className="rounded-lg bg-orange-50 border border-orange-200 p-4">
-          <div className="text-xs font-medium text-orange-600">Classe A crítica</div>
+        <div className="rounded-lg bg-white border border-slate-200 p-4">
+          <div className="text-xs font-medium text-[#EE4D2D]">Classe A crítica</div>
           <div className="text-2xl font-bold mt-1">{insights.criticalClassA}</div>
           <div className="text-xs text-[#64748B] mt-2">
             Itens de maior relevância com compra urgente ou alta.
           </div>
         </div>
 
-        <div className="rounded-xl bg-white border border-slate-200 p-4">
-          <div className="text-xs text-[#64748B]">Caixa para reposição</div>
+        <div className="rounded-md bg-white border border-slate-200 p-4">
+          <div className="text-xs text-[#64748B]">Necessidade de compra</div>
           <div className="text-2xl font-bold mt-1">
             {money(insights.purchaseInvestment)}
           </div>
@@ -1817,8 +1817,8 @@ function ExecutiveInsights({
           </div>
         </div>
 
-        <div className="rounded-xl bg-white border border-slate-200 p-4">
-          <div className="text-xs text-[#64748B]">Possível capital parado</div>
+        <div className="rounded-md bg-white border border-slate-200 p-4">
+          <div className="text-xs text-[#64748B]">Estoque excedente estimado</div>
           <div className="text-2xl font-bold mt-1">
             {money(insights.excessCapital)}
           </div>
@@ -1829,7 +1829,7 @@ function ExecutiveInsights({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-4">
-        <div className="rounded-xl bg-white border border-slate-200 p-5">
+        <div className="rounded-md bg-white border border-slate-200 p-5">
           <h3 className="font-semibold">O que exige atenção</h3>
 
           {actions.length ? (
@@ -1851,7 +1851,7 @@ function ExecutiveInsights({
           )}
         </div>
 
-        <div className="rounded-xl bg-white border border-slate-200 p-5">
+        <div className="rounded-md bg-white border border-slate-200 p-5">
           <h3 className="font-semibold">Próximos pedidos</h3>
 
           {insights.nextOrderDates?.length ? (
@@ -1943,7 +1943,7 @@ function StockHealthSection({
 
   function healthClass(value: string) {
     if (value === "RISCO_RUPTURA") return "bg-red-50 text-red-600";
-    if (value === "COMPRAR_AGORA") return "bg-orange-50 text-orange-600";
+    if (value === "COMPRAR_AGORA") return "bg-slate-50 text-[#EE4D2D]";
     if (value === "EXCESSO") return "bg-amber-50 text-yellow-300";
     if (value === "BAIXO_GIRO") return "bg-[#F1F5F9] text-[#334155]";
     return "bg-emerald-50 text-emerald-600";
@@ -1968,11 +1968,11 @@ function StockHealthSection({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <div className="rounded-xl bg-[#F8FAFC] p-4">
+        <div className="rounded-md bg-[#F8FAFC] p-4">
           <div className="text-xs text-[#64748B]">Unidades em possível excesso</div>
           <div className="text-xl font-bold mt-1">{health.excessUnits} un.</div>
         </div>
-        <div className="rounded-xl bg-[#F8FAFC] p-4">
+        <div className="rounded-md bg-[#F8FAFC] p-4">
           <div className="text-xs text-[#64748B]">Capital estimado no excesso</div>
           <div className="text-xl font-bold mt-1">
             {money(Number(health.excessCapital || 0))}
@@ -1992,7 +1992,7 @@ function StockHealthSection({
               return (
                 <div
                   key={`health-${variation.id}`}
-                  className="rounded-xl border border-slate-200 bg-[#F8FAFC] p-4"
+                  className="rounded-md border border-slate-200 bg-[#F8FAFC] p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -2109,13 +2109,13 @@ function RevenueLineChart({
           <div className="text-lg font-semibold text-slate-900 mt-1">{money(avg)}</div>
         </div>
         <div className="border border-slate-200 rounded-lg px-4 py-3 bg-white">
-          <div className="text-xs text-slate-500">Melhor dia</div>
+          <div className="text-xs text-slate-500">Dia de maior venda</div>
           <div className="text-lg font-semibold text-slate-900 mt-1">
             {formatStockDate(rows[bestIndex]?.date)}
           </div>
         </div>
         <div className="border border-slate-200 rounded-lg px-4 py-3 bg-white">
-          <div className="text-xs text-slate-500">Pico de faturamento</div>
+          <div className="text-xs text-slate-500">Maior faturamento diário</div>
           <div className="text-lg font-semibold text-slate-900 mt-1">
             {money(values[bestIndex] || 0)}
           </div>
@@ -2335,12 +2335,12 @@ function SalesSection({
 
   return (
     <section className="space-y-6">
-      <div className="bg-[#FFFFFF] border border-slate-200 rounded-2xl p-6">
+      <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
           <div>
             <h2 className="text-xl font-semibold">Vendas</h2>
             <p className="text-sm text-[#64748B] mt-1">
-              Pedidos e desempenho comercial no período selecionado.
+              Acompanhamento de pedidos, receita e volume vendido no período selecionado.
             </p>
           </div>
 
@@ -2371,7 +2371,7 @@ function SalesSection({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)] gap-6">
-        <div className="bg-[#FFFFFF] border border-slate-200 rounded-2xl p-6">
+        <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg p-6">
           <h3 className="font-semibold text-lg">Vendas por dia</h3>
           <p className="text-sm text-[#64748B] mt-1">
             Faturamento diário dentro do período selecionado.
@@ -2388,7 +2388,7 @@ function SalesSection({
           )}
         </div>
 
-        <div className="bg-[#FFFFFF] border border-slate-200 rounded-2xl overflow-hidden">
+        <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg overflow-hidden">
           <div className="p-5 border-b border-[#E2E8F0]">
             <h3 className="font-semibold text-lg">Mais vendidos</h3>
             <p className="text-sm text-[#64748B] mt-1">Ranking por unidades vendidas.</p>
@@ -2400,7 +2400,7 @@ function SalesSection({
                 {sales.topProducts.map((item: any, index: number) => (
                   <div
                     key={`${item.product_id}-${item.variation_id || "product"}-${index}`}
-                    className="rounded-xl bg-[#F8FAFC] p-4"
+                    className="rounded-md bg-[#F8FAFC] p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -2429,13 +2429,13 @@ function SalesSection({
         <div className="bg-white border border-slate-200 rounded-lg p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="font-semibold text-lg text-slate-900">Participação dos produtos</h3>
+              <h3 className="font-semibold text-lg text-slate-900">Vendas por produto</h3>
               <p className="text-sm text-slate-500 mt-1">
-                Comparação visual das unidades vendidas pelos principais SKUs.
+                Unidades vendidas pelos principais itens no período selecionado.
               </p>
             </div>
-            <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-orange-50 text-[#EE4D2D]">
-              Top 6
+            <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-slate-50 text-[#EE4D2D]">
+              6 principais
             </span>
           </div>
           <div className="mt-6">
@@ -2444,32 +2444,32 @@ function SalesSection({
         </div>
 
         <div className="bg-white border border-slate-200 rounded-lg p-6">
-          <h3 className="font-semibold text-lg text-slate-900">Curva ABC do portfólio</h3>
+          <h3 className="font-semibold text-lg text-slate-900">Classificação ABC</h3>
           <p className="text-sm text-slate-500 mt-1">
-            Distribuição dos SKUs por relevância comercial para priorização de estoque.
+            Distribuição dos SKUs conforme participação nas vendas.
           </p>
           <div className="mt-7">
             <AbcDistribution counts={abcCounts} />
           </div>
           <div className="mt-5 pt-4 border-t border-slate-200 text-xs text-slate-500">
-            Classe A concentra os itens de maior relevância; B representa importância intermediária; C reúne itens de menor participação.
+            Classificação utilizada para apoiar o planejamento de compras e a priorização do estoque.
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="bg-[#FFFFFF] border border-slate-200 rounded-2xl p-6">
-          <h3 className="font-semibold text-lg">Destaques dos produtos</h3>
+        <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg p-6">
+          <h3 className="font-semibold text-lg">Desempenho por produto</h3>
           <p className="text-sm text-[#64748B] mt-1">Comparação por giro e lucro no período selecionado.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5">
-            <div className="rounded-xl bg-[#F8FAFC] p-4">
+            <div className="rounded-md bg-[#F8FAFC] p-4">
               <div className="text-xs text-[#64748B]">Mais vendido</div>
               <div className="font-semibold mt-2">{bestSeller?.name || "Sem vendas"}</div>
               <div className="text-sm text-[#475569] mt-1">
                 {bestSeller ? `${Number(bestSeller.units || 0)} un. · ${money(Number(bestSeller.revenue || 0))}` : "Nenhum dado no período"}
               </div>
             </div>
-            <div className="rounded-xl bg-[#F8FAFC] p-4">
+            <div className="rounded-md bg-[#F8FAFC] p-4">
               <div className="text-xs text-[#64748B]">Maior lucro bruto</div>
               <div className="font-semibold mt-2">{mostProfitable?.name || "Sem vendas"}</div>
               <div className="text-sm text-[#475569] mt-1">
@@ -2479,12 +2479,12 @@ function SalesSection({
           </div>
         </div>
 
-        <div className="bg-[#FFFFFF] border border-slate-200 rounded-2xl p-6">
+        <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg p-6">
           <h3 className="font-semibold text-lg">Curva ABC</h3>
           <p className="text-sm text-[#64748B] mt-1">Classificação pela participação acumulada no faturamento.</p>
           <div className="grid grid-cols-3 gap-3 mt-5">
             {(["A", "B", "C"] as const).map((abc) => (
-              <div key={abc} className="rounded-xl bg-[#F8FAFC] p-4 text-center">
+              <div key={abc} className="rounded-md bg-[#F8FAFC] p-4 text-center">
                 <div className="text-2xl font-bold">{abcCounts[abc] || 0}</div>
                 <div className="text-xs text-[#64748B] mt-1">Classe {abc}</div>
               </div>
@@ -2494,7 +2494,7 @@ function SalesSection({
         </div>
       </div>
 
-      <div className="bg-[#FFFFFF] border border-slate-200 rounded-2xl overflow-hidden">
+      <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg overflow-hidden">
         <div className="p-5 border-b border-[#E2E8F0]">
           <h3 className="font-semibold text-lg">Análise por produto</h3>
           <p className="text-sm text-[#64748B] mt-1">Faturamento, custo, lucro, margem, participação e curva ABC.</p>
@@ -2540,7 +2540,7 @@ function SalesSection({
         )}
       </div>
 
-      <div className="bg-[#FFFFFF] border border-slate-200 rounded-2xl overflow-hidden">
+      <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg overflow-hidden">
         <div className="p-5 border-b border-[#E2E8F0]">
           <h3 className="font-semibold text-lg">Pedidos recentes</h3>
           <p className="text-sm text-[#64748B] mt-1">
@@ -2737,17 +2737,17 @@ ${lines.join("\\n\\n")}`;
 
   return (
     <section className="space-y-6">
-      <div className="bg-[#FFFFFF] border border-slate-200 rounded-2xl p-6">
+      <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg p-6">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
-            <h3 className="font-semibold text-lg">Planejamento de caixa</h3>
+            <h3 className="font-semibold text-lg">Planejamento de compras</h3>
             <p className="text-sm text-[#64748B] mt-1">
-              Quanto separar para executar a reposição sugerida usando o custo cadastrado de cada SKU.
+              Estimativa financeira para atendimento das necessidades de reposição.
             </p>
           </div>
 
           {purchaseCash.missingCostItems > 0 && (
-            <span className="px-3 py-1.5 rounded-lg bg-orange-50 text-orange-600 text-xs font-semibold">
+            <span className="px-3 py-1.5 rounded-lg bg-slate-50 text-[#EE4D2D] text-xs font-semibold">
               {purchaseCash.missingCostItems} item(ns) sem custo informado
             </span>
           )}
@@ -2759,11 +2759,11 @@ ${lines.join("\\n\\n")}`;
             value={money(purchaseCash.total)}
           />
           <PurchaseMetric
-            title="Caixa urgente"
+            title="Reposição urgente"
             value={money(purchaseCash.urgent)}
           />
           <PurchaseMetric
-            title="Caixa classe A"
+            title="Itens classe A"
             value={money(purchaseCash.classA)}
           />
           <PurchaseMetric
@@ -2823,7 +2823,7 @@ ${lines.join("\\n\\n")}`;
                             variation.purchase_priority === "URGENTE"
                               ? "bg-red-50 text-red-600"
                               : variation.purchase_priority === "ALTA"
-                                ? "bg-orange-50 text-orange-600"
+                                ? "bg-slate-50 text-[#EE4D2D]"
                                 : "bg-[#F1F5F9] text-[#334155]"
                           }`}
                         >
@@ -2839,14 +2839,14 @@ ${lines.join("\\n\\n")}`;
                       </td>
                       <td className="py-4 pr-4 text-sm">
                         {hasCost ? money(unitCost) : (
-                          <span className="text-orange-600">
+                          <span className="text-[#EE4D2D]">
                             Custo não informado
                           </span>
                         )}
                       </td>
                       <td className="py-4 text-sm font-semibold">
                         {hasCost ? money(investment) : (
-                          <span className="text-orange-600">
+                          <span className="text-[#EE4D2D]">
                             Custo não informado
                           </span>
                         )}
@@ -2860,7 +2860,7 @@ ${lines.join("\\n\\n")}`;
         )}
       </div>
 
-      <div className="bg-[#FFFFFF] border border-slate-200 rounded-2xl p-6">
+      <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg p-6">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
           <div>
             <h2 className="text-xl font-semibold">Compras / Reposição</h2>
@@ -2882,7 +2882,7 @@ ${lines.join("\\n\\n")}`;
         </div>
       </div>
 
-      <div className="bg-[#FFFFFF] border border-slate-200 rounded-2xl p-6">
+      <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg p-6">
         <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-5">
           <div>
             <h3 className="font-semibold text-lg">Sugestão de pedido de compra</h3>
@@ -2977,7 +2977,7 @@ ${lines.join("\\n\\n")}`;
                             variation.purchase_priority === "URGENTE"
                               ? "bg-red-50 text-red-600"
                               : variation.purchase_priority === "ALTA"
-                                ? "bg-orange-50 text-orange-600"
+                                ? "bg-slate-50 text-[#EE4D2D]"
                                 : "bg-[#F1F5F9] text-[#334155]"
                           }`}
                         >
@@ -2994,12 +2994,12 @@ ${lines.join("\\n\\n")}`;
                       <td className="py-4 pr-4 text-sm">
                         {hasCost
                           ? money(Number(variation.purchase_unit_cost || 0))
-                          : <span className="text-orange-600">Não informado</span>}
+                          : <span className="text-[#EE4D2D]">Não informado</span>}
                       </td>
                       <td className="py-4 pr-4 text-sm font-semibold">
                         {hasCost
                           ? money(Number(variation.purchase_investment || 0))
-                          : <span className="text-orange-600">Não informado</span>}
+                          : <span className="text-[#EE4D2D]">Não informado</span>}
                       </td>
                       <td className="py-4 text-sm">
                         {variation.order_by_date
@@ -3023,7 +3023,7 @@ ${lines.join("\\n\\n")}`;
         </p>
       </div>
 
-      <div className="bg-[#FFFFFF] border border-slate-200 rounded-2xl p-6">
+      <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h3 className="font-semibold text-lg">Prioridades de compra</h3>
@@ -3052,7 +3052,7 @@ ${lines.join("\\n\\n")}`;
               return (
                 <div
                   key={`priority-${variation.id}`}
-                  className="rounded-xl bg-white border border-slate-200 p-4"
+                  className="rounded-md bg-white border border-slate-200 p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -3075,7 +3075,7 @@ ${lines.join("\\n\\n")}`;
                           variation.purchase_priority === "URGENTE"
                             ? "bg-red-50 text-red-600"
                             : variation.purchase_priority === "ALTA"
-                              ? "bg-orange-50 text-orange-600"
+                              ? "bg-slate-50 text-[#EE4D2D]"
                               : "bg-[#F1F5F9] text-[#334155]"
                         }`}
                       >
@@ -3129,7 +3129,7 @@ ${lines.join("\\n\\n")}`;
         )}
       </div>
 
-      <div className="bg-[#FFFFFF] border border-slate-200 rounded-2xl overflow-hidden">
+      <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg overflow-hidden">
         <div className="p-5 border-b border-[#E2E8F0]">
           <h3 className="font-semibold text-lg">Lista de reposição</h3>
           <p className="text-sm text-[#64748B] mt-1">
@@ -3265,7 +3265,7 @@ function StockHistorySection({ data }: { data: DashboardData }) {
     .slice(0, 6);
 
   return (
-    <div className="bg-[#FFFFFF] border border-slate-200 rounded-2xl overflow-hidden">
+    <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg overflow-hidden">
       <div className="p-5 border-b border-[#E2E8F0]">
         <h3 className="font-semibold text-lg">Histórico de estoque</h3>
         <p className="text-sm text-[#64748B] mt-1">
@@ -3291,7 +3291,7 @@ function StockHistorySection({ data }: { data: DashboardData }) {
               .join(" ");
 
             return (
-              <div key={variation.id} className="rounded-xl bg-white border border-slate-200 p-4">
+              <div key={variation.id} className="rounded-md bg-white border border-slate-200 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-medium text-sm">{product?.name || "Produto"}</p>
@@ -3339,7 +3339,7 @@ function PurchaseMetric({
   danger?: boolean;
 }) {
   return (
-    <div className="bg-[#F8FAFC] rounded-xl p-4">
+    <div className="bg-[#F8FAFC] rounded-md p-4">
       <p className="text-xs text-[#64748B]">{title}</p>
       <p className={`text-xl font-bold mt-2 ${danger ? "text-red-600" : "text-slate-900"}`}>
         {value}
@@ -3401,7 +3401,7 @@ function StockSettingsCard({
                 step="1"
                 value={leadTime}
                 onChange={(event) => setLeadTime(event.target.value)}
-                className="w-24 rounded-xl bg-white border border-[#CBD5E1] px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-white/30"
+                className="w-24 rounded-md bg-white border border-[#CBD5E1] px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-white/30"
               />
               <span className="text-sm text-[#64748B]">dias</span>
             </div>
@@ -3417,7 +3417,7 @@ function StockSettingsCard({
                 step="1"
                 value={safety}
                 onChange={(event) => setSafety(event.target.value)}
-                className="w-24 rounded-xl bg-white border border-[#CBD5E1] px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-white/30"
+                className="w-24 rounded-md bg-white border border-[#CBD5E1] px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-white/30"
               />
               <span className="text-sm text-[#64748B]">dias</span>
             </div>
@@ -3426,7 +3426,7 @@ function StockSettingsCard({
           <button
             onClick={() => onSave(parsedLeadTime, parsedSafety)}
             disabled={!valid || saving}
-            className="px-5 py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-zinc-200 disabled:opacity-50"
+            className="px-5 py-2.5 rounded-md bg-white text-black text-sm font-semibold hover:bg-zinc-200 disabled:opacity-50"
           >
             {saving ? "Salvando..." : "Salvar"}
           </button>
@@ -3524,7 +3524,7 @@ function ReviewsSection({
   ).length;
 
   return (
-    <section className="bg-[#FFFFFF] border border-slate-200 rounded-2xl overflow-hidden">
+    <section className="bg-[#FFFFFF] border border-slate-200 rounded-lg overflow-hidden">
       <div className="p-6 border-b border-[#E2E8F0]">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
@@ -3541,7 +3541,7 @@ function ReviewsSection({
             <button
               onClick={onCreateTest}
               disabled={loading}
-              className="px-4 py-2.5 rounded-xl bg-amber-50 text-amber-600 text-sm font-semibold hover:bg-yellow-500/20 disabled:opacity-50"
+              className="px-4 py-2.5 rounded-md bg-amber-50 text-amber-600 text-sm font-semibold hover:bg-yellow-500/20 disabled:opacity-50"
             >
               🧪 Criar avaliação teste
             </button>
@@ -3549,7 +3549,7 @@ function ReviewsSection({
             <button
               onClick={onSync}
               disabled={loading}
-              className="px-4 py-2.5 rounded-xl bg-[#F1F5F9] text-slate-900 text-sm font-semibold hover:bg-slate-100 disabled:opacity-50"
+              className="px-4 py-2.5 rounded-md bg-[#F1F5F9] text-slate-900 text-sm font-semibold hover:bg-slate-100 disabled:opacity-50"
             >
               {loading
                 ? "Sincronizando..."
@@ -3559,15 +3559,15 @@ function ReviewsSection({
             <button
               onClick={onGenerate}
               disabled={loading || reviews.length === 0}
-              className="px-4 py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-zinc-200 disabled:opacity-50"
+              className="px-4 py-2.5 rounded-md bg-white text-black text-sm font-semibold hover:bg-zinc-200 disabled:opacity-50"
             >
-              Preparar respostas
+              Revisar respostas
             </button>
           </div>
         </div>
 
         <div className="flex gap-4 mt-5 text-sm">
-          <div className="bg-[#F8FAFC] rounded-xl px-4 py-3">
+          <div className="bg-[#F8FAFC] rounded-md px-4 py-3">
             <p className="text-[#64748B] text-xs">
               Total
             </p>
@@ -3576,7 +3576,7 @@ function ReviewsSection({
             </p>
           </div>
 
-          <div className="bg-[#F8FAFC] rounded-xl px-4 py-3">
+          <div className="bg-[#F8FAFC] rounded-md px-4 py-3">
             <p className="text-[#64748B] text-xs">
               Pendentes
             </p>
@@ -3587,7 +3587,7 @@ function ReviewsSection({
         </div>
 
         {message && (
-          <div className="mt-4 rounded-xl bg-white border border-slate-200 px-4 py-3 text-sm text-[#334155]">
+          <div className="mt-4 rounded-md bg-white border border-slate-200 px-4 py-3 text-sm text-[#334155]">
             {message}
           </div>
         )}
@@ -3686,7 +3686,7 @@ function ReviewCard({
   }, [prepared]);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-[#F8FAFC] p-5">
+    <div className="rounded-lg border border-slate-200 bg-[#F8FAFC] p-5">
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
@@ -3720,7 +3720,7 @@ function ReviewCard({
             </span>
 
             {review.is_test && (
-              <span className="text-xs px-2.5 py-1 rounded-lg font-semibold bg-orange-50 text-orange-600">
+              <span className="text-xs px-2.5 py-1 rounded-lg font-semibold bg-slate-50 text-[#EE4D2D]">
                 TESTE
               </span>
             )}
@@ -3738,7 +3738,7 @@ function ReviewCard({
         </div>
       </div>
 
-      <div className="mt-5 rounded-xl bg-white/20 border border-slate-200 p-4">
+      <div className="mt-5 rounded-md bg-white/20 border border-slate-200 p-4">
         <div className="flex items-center justify-between gap-3 mb-3">
           <p className="text-xs uppercase tracking-wide text-[#64748B]">
             Resposta preparada
@@ -3762,7 +3762,7 @@ function ReviewCard({
                 setText(event.target.value)
               }
               rows={4}
-              className="w-full rounded-xl bg-white border border-[#CBD5E1] p-3 text-sm text-slate-900 outline-none focus:border-white/30"
+              className="w-full rounded-md bg-white border border-[#CBD5E1] p-3 text-sm text-slate-900 outline-none focus:border-white/30"
             />
 
             <div className="flex gap-2 mt-3">
@@ -3794,7 +3794,7 @@ function ReviewCard({
         <div className="flex justify-end mt-4">
           <button
             onClick={onDeleteTest}
-            className="px-4 py-2.5 rounded-xl bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-500/20"
+            className="px-4 py-2.5 rounded-md bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-500/20"
           >
             Excluir teste
           </button>
@@ -3806,7 +3806,7 @@ function ReviewCard({
           <button
             onClick={onSend}
             disabled={sending}
-            className="px-5 py-2.5 rounded-xl bg-white text-black text-sm font-bold hover:bg-zinc-200 disabled:opacity-50"
+            className="px-5 py-2.5 rounded-md bg-white text-black text-sm font-bold hover:bg-zinc-200 disabled:opacity-50"
           >
             {sending
               ? "Enviando..."
@@ -3828,7 +3828,7 @@ function MetricCard({
   subtitle: string;
 }) {
   return (
-    <div className="bg-[#FFFFFF] border border-slate-200 rounded-2xl p-5">
+    <div className="bg-[#FFFFFF] border border-slate-200 rounded-lg p-5">
 
       <p className="text-sm text-[#64748B]">
         {title}
@@ -3854,7 +3854,7 @@ function PerformanceCard({
   value: string;
 }) {
   return (
-    <div className="bg-[#F8FAFC] rounded-xl p-4">
+    <div className="bg-[#F8FAFC] rounded-md p-4">
 
       <p className="text-xs text-[#64748B]">
         {title}
