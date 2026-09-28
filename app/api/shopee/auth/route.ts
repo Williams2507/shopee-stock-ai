@@ -3,8 +3,7 @@ import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
 
-const SHOPEE_HOST =
-  "https://openplatform.sandbox.test-stable.shopee.sg";
+import { SHOPEE_HOST } from "@/lib/shopee/config";
 
 export async function POST(request: Request) {
   try {

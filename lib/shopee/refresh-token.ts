@@ -1,8 +1,7 @@
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
-const SHOPEE_HOST =
-  "https://openplatform.sandbox.test-stable.shopee.sg";
+import { SHOPEE_HOST } from "@/lib/shopee/config";
 
 export async function refreshShopeeToken(store: any) {
   const partnerId = process.env.SHOPEE_PARTNER_ID!;

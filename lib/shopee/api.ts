@@ -1,8 +1,7 @@
 import crypto from "crypto";
 import { refreshShopeeToken } from "./refresh-token";
 
-const SHOPEE_HOST =
-  "https://openplatform.sandbox.test-stable.shopee.sg";
+import { SHOPEE_HOST } from "@/lib/shopee/config";
 
 type Store = {
   id: string;

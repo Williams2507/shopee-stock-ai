@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
+import { SHOPEE_HOST } from "@/lib/shopee/config";
 
 export async function GET(request: Request) {
   try {
@@ -18,12 +19,13 @@ export async function GET(request: Request) {
 
     if (!store) {
       return NextResponse.json(
-        { success: false, error: "Loja não encontrada." },
+        {
+          success: false,
+          error: "Loja não encontrada.",
+        },
         { status: 404 }
       );
     }
-
-
 
     const partnerId = process.env.SHOPEE_PARTNER_ID;
     const partnerKey = process.env.SHOPEE_PARTNER_KEY;
@@ -42,29 +44,28 @@ export async function GET(request: Request) {
     const timestamp = Math.floor(Date.now() / 1000);
 
     const baseString =
-    `${partnerId}${path}${timestamp}${store.access_token}${store.shop_id}`;
+      `${partnerId}${path}${timestamp}${store.access_token}${store.shop_id}`;
 
     const sign = crypto
-    .createHmac("sha256", partnerKey)
-    .update(baseString)
-    .digest("hex");
+      .createHmac("sha256", partnerKey)
+      .update(baseString)
+      .digest("hex");
 
     const apiUrl =
-    `https://openplatform.sandbox.test-stable.shopee.sg${path}` +
-    `?partner_id=${partnerId}` +
-    `&timestamp=${timestamp}` +
-    `&sign=${sign}` +
-    `&shop_id=${store.shop_id}` +
-    `&access_token=${encodeURIComponent(store.access_token)}`;
-    
-    const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-        },
-    });
+      `${SHOPEE_HOST}${path}` +
+      `?partner_id=${partnerId}` +
+      `&timestamp=${timestamp}` +
+      `&sign=${sign}` +
+      `&shop_id=${store.shop_id}` +
+      `&access_token=${encodeURIComponent(store.access_token)}`;
 
-    //aaa
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
 
     const data = await response.json();
 
@@ -74,9 +75,15 @@ export async function GET(request: Request) {
       shopeeResponse: data,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+    if (
+      error instanceof Error &&
+      error.message === "UNAUTHORIZED"
+    ) {
       return NextResponse.json(
-        { success: false, error: "Não autorizado." },
+        {
+          success: false,
+          error: "Não autorizado.",
+        },
         { status: 401 }
       );
     }
