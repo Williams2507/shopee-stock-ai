@@ -391,7 +391,8 @@ export async function GET(request: Request) {
         Number(item.total_price || 0) ||
         quantity *
           Number(
-            item.price ||
+            item.unit_price ||
+              item.price ||
               variation?.price ||
               product?.price ||
               0
