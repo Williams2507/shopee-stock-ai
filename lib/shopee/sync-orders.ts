@@ -22,269 +22,285 @@ const ORDER_FIELDS = [
   "package_list",
 ].join(",");
 
-export async function syncOrders(store: any) {
-  let cursor = "";
-  let hasMore = true;
+const DAY_SECONDS = 24 * 60 * 60;
+const WINDOW_DAYS = 14;
+
+export async function syncOrders(
+  store: any,
+  days = 14
+) {
+  const now = Math.floor(Date.now() / 1000);
+
+  const requestedDays = Math.max(
+    1,
+    Math.min(days, 90)
+  );
+
+  const historyStart =
+    now - requestedDays * DAY_SECONDS;
 
   let totalOrders = 0;
   let totalItems = 0;
 
-  while (hasMore) {
-    const params: Record<string, string> = {
-      time_range_field: "create_time",
-
-      time_from: Math.floor(
-        (Date.now() -
-          14 * 24 * 60 * 60 * 1000) /
-          1000
-      ).toString(),
-
-      time_to: Math.floor(
-        Date.now() / 1000
-      ).toString(),
-
-      page_size: "50",
-    };
-
-    if (cursor) {
-      params.cursor = cursor;
-    }
-
-    const listData = await shopeeGet(
-      "/api/v2/order/get_order_list",
-      store,
-      params
+  // Percorre o histórico em blocos de no máximo 14 dias.
+  // A API da Shopee limita o intervalo de get_order_list.
+  for (
+    let windowStart = historyStart;
+    windowStart < now;
+    windowStart += WINDOW_DAYS * DAY_SECONDS
+  ) {
+    const windowEnd = Math.min(
+      windowStart + WINDOW_DAYS * DAY_SECONDS,
+      now
     );
 
-    const response = listData.response;
+    let cursor = "";
+    let hasMore = true;
 
-    const orderList =
-      response?.order_list || [];
+    while (hasMore) {
+      const params: Record<string, string> = {
+        time_range_field: "create_time",
+        time_from: windowStart.toString(),
+        time_to: windowEnd.toString(),
+        page_size: "50",
+      };
 
-    if (orderList.length === 0) {
-      break;
-    }
+      if (cursor) {
+        params.cursor = cursor;
+      }
 
-    for (
-      let i = 0;
-      i < orderList.length;
-      i += 50
-    ) {
-      const batch =
-        orderList.slice(i, i + 50);
+      const listData = await shopeeGet(
+        "/api/v2/order/get_order_list",
+        store,
+        params
+      );
 
-      const orderSnList = batch
-        .map(
-          (order: any) =>
-            order.order_sn
-        )
-        .join(",");
+      const response = listData.response;
 
-      const detailData =
-        await shopeeGet(
-          "/api/v2/order/get_order_detail",
-          store,
-          {
-            order_sn_list:
-              orderSnList,
+      const orderList =
+        response?.order_list || [];
 
-            response_optional_fields:
-              ORDER_FIELDS,
-          }
-        );
+      if (orderList.length === 0) {
+        break;
+      }
 
-      const detailedOrders =
-        detailData.response
-          ?.order_list || [];
+      for (
+        let i = 0;
+        i < orderList.length;
+        i += 50
+      ) {
+        const batch =
+          orderList.slice(i, i + 50);
 
-      for (const order of detailedOrders) {
-        // =========================
-        // SALVAR PEDIDO
-        // =========================
-
-        const {
-          data: savedOrder,
-          error,
-        } = await supabaseAdmin
-          .from("orders")
-          .upsert(
-            {
-              store_id: store.id,
-
-              shopee_order_id:
-                order.order_sn,
-
-              status:
-                order.order_status,
-
-              total_amount: Number(
-                order.total_amount || 0
-              ),
-
-              order_date:
-                order.create_time
-                  ? new Date(
-                      Number(
-                        order.create_time
-                      ) * 1000
-                    ).toISOString()
-                  : new Date().toISOString(),
-
-              updated_at:
-                new Date().toISOString(),
-            },
-            {
-              onConflict:
-                "store_id,shopee_order_id",
-            }
+        const orderSnList = batch
+          .map(
+            (order: any) =>
+              order.order_sn
           )
-          .select()
-          .single();
+          .join(",");
 
-        if (error || !savedOrder) {
-          console.error(
-            "Erro salvando pedido:",
-            error
-          );
-
+        if (!orderSnList) {
           continue;
         }
 
-        totalOrders++;
+        const detailData =
+          await shopeeGet(
+            "/api/v2/order/get_order_detail",
+            store,
+            {
+              order_sn_list:
+                orderSnList,
 
-        // =========================
-        // SALVAR ITENS
-        // =========================
+              response_optional_fields:
+                ORDER_FIELDS,
+            }
+          );
 
-        const items =
-          order.item_list || [];
+        const detailedOrders =
+          detailData.response
+            ?.order_list || [];
 
-        for (const item of items) {
-          // Procura produto
-          const { data: product } =
-            await supabaseAdmin
-              .from("products")
-              .select("id")
-              .eq(
-                "store_id",
-                store.id
-              )
-              .eq(
-                "shopee_item_id",
-                Number(item.item_id)
-              )
-              .maybeSingle();
+        for (const order of detailedOrders) {
+          // =========================
+          // SALVAR PEDIDO
+          // =========================
 
-          let variationId = null;
-
-          // Procura variação
-          if (
-            product &&
-            item.model_id
-          ) {
-            const {
-              data: variation,
-            } =
-              await supabaseAdmin
-                .from(
-                  "product_variations"
-                )
-                .select("id")
-                .eq(
-                  "product_id",
-                  product.id
-                )
-                .eq(
-                  "shopee_model_id",
-                  Number(
-                    item.model_id
-                  )
-                )
-                .maybeSingle();
-
-            variationId =
-              variation?.id || null;
-          }
-
-          // Salva item
           const {
-            error: itemError,
+            data: savedOrder,
+            error,
           } = await supabaseAdmin
-            .from("order_items")
+            .from("orders")
             .upsert(
               {
-                order_id:
-                  savedOrder.id,
+                store_id: store.id,
 
-                product_id:
-                  product?.id ||
-                  null,
+                shopee_order_id:
+                  order.order_sn,
 
-                variation_id:
-                  variationId,
+                status:
+                  order.order_status,
 
-                shopee_item_id:
-                  Number(
-                    item.item_id
-                  ),
-
-                shopee_model_id:
-                  Number(
-                    item.model_id || 0
-                  ),
-
-                quantity: Number(
-                  item.model_quantity ||
-                    item.quantity ||
-                    1
+                total_amount: Number(
+                  order.total_amount || 0
                 ),
 
-                unit_price: Number(
-                  item.model_discounted_price ||
-                    item.model_original_price ||
-                    item.model_price ||
-                    0
-                ),
+                order_date:
+                  order.create_time
+                    ? new Date(
+                        Number(
+                          order.create_time
+                        ) * 1000
+                      ).toISOString()
+                    : new Date().toISOString(),
+
+                updated_at:
+                  new Date().toISOString(),
               },
               {
                 onConflict:
-                  "order_id,shopee_item_id,shopee_model_id",
+                  "store_id,shopee_order_id",
               }
-            );
+            )
+            .select()
+            .single();
 
-          if (!itemError) {
-            totalItems++;
-          } else {
+          if (error || !savedOrder) {
             console.error(
-              "Erro salvando item:",
-              itemError
+              "Erro salvando pedido:",
+              error
             );
+
+            continue;
           }
+
+          totalOrders++;
+
+          // =========================
+          // SALVAR ITENS
+          // =========================
+
+          const items =
+            order.item_list || [];
+
+          for (const item of items) {
+            const { data: product } =
+              await supabaseAdmin
+                .from("products")
+                .select("id")
+                .eq(
+                  "store_id",
+                  store.id
+                )
+                .eq(
+                  "shopee_item_id",
+                  Number(item.item_id)
+                )
+                .maybeSingle();
+
+            let variationId = null;
+
+            if (
+              product &&
+              item.model_id
+            ) {
+              const {
+                data: variation,
+              } =
+                await supabaseAdmin
+                  .from(
+                    "product_variations"
+                  )
+                  .select("id")
+                  .eq(
+                    "product_id",
+                    product.id
+                  )
+                  .eq(
+                    "shopee_model_id",
+                    Number(
+                      item.model_id
+                    )
+                  )
+                  .maybeSingle();
+
+              variationId =
+                variation?.id || null;
+            }
+
+            const {
+              error: itemError,
+            } = await supabaseAdmin
+              .from("order_items")
+              .upsert(
+                {
+                  order_id:
+                    savedOrder.id,
+
+                  product_id:
+                    product?.id ||
+                    null,
+
+                  variation_id:
+                    variationId,
+
+                  shopee_item_id:
+                    Number(
+                      item.item_id
+                    ),
+
+                  shopee_model_id:
+                    Number(
+                      item.model_id || 0
+                    ),
+
+                  quantity: Number(
+                    item.model_quantity ||
+                      item.quantity ||
+                      1
+                  ),
+
+                  unit_price: Number(
+                    item.model_discounted_price ||
+                      item.model_original_price ||
+                      item.model_price ||
+                      0
+                  ),
+                },
+                {
+                  onConflict:
+                    "order_id,shopee_item_id,shopee_model_id",
+                }
+              );
+
+            if (!itemError) {
+              totalItems++;
+            } else {
+              console.error(
+                "Erro salvando item:",
+                itemError
+              );
+            }
+          }
+
+          // Registra a movimentação da venda.
+          // processOrder é idempotente por reference_id
+          // e não altera diretamente o estoque atual.
+          await processOrder(
+            store,
+            order
+          );
         }
-
-        // =========================
-        // ATUALIZAR ESTOQUE
-        // =========================
-
-        await processOrder(
-          store,
-          order
-        );
       }
-    }
 
-    // =========================
-    // PAGINAÇÃO
-    // =========================
+      hasMore =
+        response?.more === true;
 
-    hasMore =
-      response?.more === true;
+      cursor =
+        response?.next_cursor || "";
 
-    cursor =
-      response?.next_cursor || "";
-
-    if (!cursor) {
-      hasMore = false;
+      if (!cursor) {
+        hasMore = false;
+      }
     }
   }
 

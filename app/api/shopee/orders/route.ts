@@ -15,18 +15,24 @@ export async function GET(request: Request) {
         .eq("user_id", user.id)
         .maybeSingle();
 
-    if (storeError) throw storeError;
+    if (storeError) {
+      throw storeError;
+    }
 
     if (!store) {
       return NextResponse.json(
-        { success: false, error: "Loja não encontrada." },
+        {
+          success: false,
+          error: "Loja não encontrada.",
+        },
         { status: 404 }
       );
     }
 
-
-
-    const result = await syncOrders(store);
+    // Sincronização manual:
+    // busca até 90 dias para alimentar todos
+    // os períodos disponíveis no dashboard.
+    const result = await syncOrders(store, 90);
 
     return NextResponse.json({
       success: true,
@@ -34,9 +40,15 @@ export async function GET(request: Request) {
       ...result,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+    if (
+      error instanceof Error &&
+      error.message === "UNAUTHORIZED"
+    ) {
       return NextResponse.json(
-        { success: false, error: "Não autorizado." },
+        {
+          success: false,
+          error: "Não autorizado.",
+        },
         { status: 401 }
       );
     }
