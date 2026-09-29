@@ -186,7 +186,9 @@ export default function Home() {
     selectedPeriod = period
   ) {
     try {
-      setLoading(true);
+      // Mostra a tela de carregamento somente no primeiro acesso.
+      // Atualizações posteriores acontecem silenciosamente, sem piscar a tela.
+      if (!data) setLoading(true);
       setError("");
 
       const response = await authFetch(
@@ -264,7 +266,7 @@ async function createDemoSale() {
     const sale = result.sale;
 
     setDemoMessage(
-      `Nova venda na simulação: ${sale.product} • ${money(
+      `Nova venda simulada: ${sale.product} • ${money(
         Number(sale.total || 0)
       )}`
     );
@@ -818,10 +820,10 @@ async function createDemoSale() {
     user.email?.split("@")[0]?.split(/[._-]/)[0] || "vendedor";
 
   const navItems = [
-    { id: "dashboard" as const, label: "Dashboard", icon: "home" },
-    { id: "sales" as const, label: "Vendas", icon: "cart" },
-    { id: "purchases" as const, label: "Compras / Reposição", icon: "box" },
-    { id: "reviews" as const, label: "Avaliações", icon: "star" },
+    { id: "dashboard" as const, label: "Dashboard", icon: "⌂" },
+    { id: "sales" as const, label: "Vendas", icon: "▥" },
+    { id: "purchases" as const, label: "Compras / Reposição", icon: "▣" },
+    { id: "reviews" as const, label: "Avaliações", icon: "☆" },
   ];
 
   return (
@@ -852,7 +854,7 @@ async function createDemoSale() {
                     : "text-[#475569] hover:bg-[#FFF1E8] hover:text-[#EE4D2D]"
                 }`}
               >
-                <span className="w-5"><AppIcon name={item.icon} /></span>
+                <span className="text-lg w-5 text-center">{item.icon}</span>
                 {item.label}
               </button>
             ))}
@@ -863,7 +865,7 @@ async function createDemoSale() {
               onClick={signOut}
               className="w-full flex items-center gap-3 rounded-md px-4 py-3 text-sm font-semibold text-[#475569] hover:bg-[#F8FAFC]"
             >
-              <span className="w-5"><AppIcon name="logout" /></span>
+              <span className="text-lg">↪</span>
               Sair
             </button>
           </div>
@@ -886,7 +888,7 @@ async function createDemoSale() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {!demoMode && (
+                {!demoMode ? (
                   <button
                     onClick={() => {
                       setDemoMode(true);
@@ -896,17 +898,19 @@ async function createDemoSale() {
                   >
                     Ativar simulação
                   </button>
-                )}
-
-                {demoMode && (
-                  <button
-                    onClick={createDemoSale}
-                    disabled={demoSaleLoading}
-                    className="px-4 py-2.5 rounded-md border border-slate-200 bg-white text-slate-600 text-sm font-bold hover:bg-slate-50 disabled:opacity-40 transition"
-                    title="Venda simulada"
-                  >
-                    {demoSaleLoading ? "Gerando..." : "+ Venda simulada"}
-                  </button>
+                ) : (
+                  <>
+                    <span className="px-3 py-2.5 rounded-md bg-slate-100 text-slate-500 text-xs font-bold">
+                      Simulação ativa
+                    </span>
+                    <button
+                      onClick={createDemoSale}
+                      disabled={demoSaleLoading}
+                      className="px-4 py-2.5 rounded-md border border-slate-200 bg-white text-slate-600 text-sm font-bold hover:bg-slate-50 disabled:opacity-40 transition"
+                    >
+                      {demoSaleLoading ? "Atualizando..." : "+ Venda simulada"}
+                    </button>
+                  </>
                 )}
 
                 <button
@@ -920,7 +924,7 @@ async function createDemoSale() {
                   onClick={() => loadDashboard()}
                   className="px-4 py-2.5 rounded-md bg-[#EE4D2D] text-white text-sm font-bold hover:bg-[#D93F22] shadow-sm transition"
                 >
-                  <span className="inline-flex items-center gap-2"><AppIcon name="refresh" /> Atualizar dados</span>
+                  ↻ Atualizar dados
                 </button>
               </div>
             </div>
@@ -981,10 +985,10 @@ async function createDemoSale() {
                 </div>
 
                 <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
-                  <LightMetricCard title="Faturamento" value={money(metrics.revenue)} icon="money" accent="orange" />
-                  <LightMetricCard title="Pedidos" value={metrics.orders.toString()} icon="orders" accent="blue" />
-                  <LightMetricCard title="Itens vendidos" value={metrics.unitsSold.toString()} icon="package" accent="green" />
-                  <LightMetricCard title="Lucro bruto" value={money(metrics.grossProfit)} icon="profit" accent="purple" />
+                  <LightMetricCard title="Faturamento" value={money(metrics.revenue)} icon="R$" accent="orange" />
+                  <LightMetricCard title="Pedidos" value={metrics.orders.toString()} icon="▣" accent="blue" />
+                  <LightMetricCard title="Itens vendidos" value={metrics.unitsSold.toString()} icon="□" accent="green" />
+                  <LightMetricCard title="Lucro bruto" value={money(metrics.grossProfit)} icon="▥" accent="purple" />
                 </section>
 
                 <section className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
@@ -1239,23 +1243,6 @@ async function createDemoSale() {
   );
 }
 
-function AppIcon({ name }: { name: string }) {
-  const common = { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
-  const paths: Record<string, React.ReactNode> = {
-    home: <><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></>,
-    cart: <><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H6"/></>,
-    box: <><path d="M21 8 12 13 3 8"/><path d="M3 8l9-5 9 5v8l-9 5-9-5Z"/><path d="M12 13v8"/></>,
-    star: <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2L5.8 21 7 14.2 2 9.3l6.9-1Z"/>,
-    logout: <><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></>,
-    refresh: <><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M18.5 9a7 7 0 0 0-12-2L4 11"/><path d="M5.5 15a7 7 0 0 0 12 2l2.5-4"/></>,
-    money: <><circle cx="12" cy="12" r="9"/><path d="M16 8.5c-.8-.8-2-1.2-3.5-1.2-2 0-3.5 1-3.5 2.5 0 3.8 7 1.8 7 5.2 0 1.5-1.5 2.5-3.5 2.5-1.5 0-2.8-.4-3.7-1.3"/><path d="M12 5.5v13"/></>,
-    orders: <><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></>,
-    package: <><path d="M21 8 12 13 3 8"/><path d="M3 8l9-5 9 5v8l-9 5-9-5Z"/><path d="M12 13v8"/></>,
-    profit: <><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/><path d="m4 7 6-4 6 5 5-4"/></>,
-  };
-  return <svg {...common} aria-hidden="true">{paths[name] || paths.box}</svg>;
-}
-
 function LightMetricCard({
   title,
   value,
@@ -1282,7 +1269,7 @@ function LightMetricCard({
           <p className="text-2xl font-bold tracking-normal mt-3">{value}</p>
         </div>
         <div className={`h-11 min-w-11 px-2 rounded-lg grid place-items-center text-sm font-bold ${tones[accent]}`}>
-          <AppIcon name={icon} />
+          {icon}
         </div>
       </div>
       <div className="mt-4 h-1.5 rounded-full bg-[#F1F5F9] overflow-hidden">
