@@ -153,6 +153,10 @@ export default function Home() {
   const [connectionMessage, setConnectionMessage] =
     useState("");
 
+  const [demoMode, setDemoMode] = useState(false);
+  const [demoMessage, setDemoMessage] = useState("");
+  const [demoSaleLoading, setDemoSaleLoading] = useState(false);
+
   async function authFetch(
     input: RequestInfo | URL,
     init: RequestInit = {}
@@ -240,6 +244,67 @@ export default function Home() {
       loadDashboard(period);
     }
   }, [period, authReady, user]);
+async function createDemoSale() {
+  try {
+    setDemoSaleLoading(true);
+
+    const response = await authFetch("/api/demo-sale", {
+      method: "POST",
+      cache: "no-store",
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.error || "Erro ao gerar venda simulada."
+      );
+    }
+
+    const sale = result.sale;
+
+    setDemoMessage(
+      `Venda simulada: ${sale.product} • ${money(
+        Number(sale.total || 0)
+      )}`
+    );
+
+    await loadDashboard(period);
+  } catch (error) {
+    setDemoMessage(
+      error instanceof Error
+        ? error.message
+        : "Erro na demonstração."
+    );
+  } finally {
+    setDemoSaleLoading(false);
+  }
+}
+  useEffect(() => {
+    if (!demoMode || !authReady || !user) return;
+
+    let timeoutId: ReturnType<typeof setTimeout>;
+    let cancelled = false;
+
+    function scheduleNextSale() {
+      const delay =
+        Math.floor(Math.random() * (5 * 60_000 - 2 * 60_000 + 1)) +
+        2 * 60_000;
+
+      timeoutId = setTimeout(async () => {
+        if (cancelled) return;
+        await createDemoSale();
+        if (!cancelled) scheduleNextSale();
+      }, delay);
+    }
+
+    scheduleNextSale();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [demoMode, authReady, user]);
 
   async function connectShopee() {
     try {
@@ -824,6 +889,32 @@ export default function Home() {
 
               <div className="flex flex-wrap gap-2">
                 <button
+                  onClick={() => {
+                    setDemoMode((current) => !current);
+                    setDemoMessage(
+                      demoMode
+                        ? "Modo demonstração desativado."
+                        : "Modo demonstração ativado. As vendas exibidas neste modo são simuladas."
+                    );
+                  }}
+                  className={`px-4 py-2.5 rounded-md border text-sm font-bold transition ${
+                    demoMode
+                      ? "border-amber-300 bg-amber-50 text-amber-700"
+                      : "border-slate-200 bg-white text-slate-600"
+                  }`}
+                >
+                  {demoMode ? "● Demo ativo" : "○ Ativar demo"}
+                </button>
+
+                <button
+                  onClick={createDemoSale}
+                  disabled={!demoMode || demoSaleLoading}
+                  className="px-4 py-2.5 rounded-md border border-slate-200 bg-white text-slate-600 text-sm font-bold hover:bg-slate-50 disabled:opacity-40 transition"
+                >
+                  {demoSaleLoading ? "Gerando..." : "+ Venda demo"}
+                </button>
+
+                <button
                   onClick={connectShopee}
                   disabled={connectingShopee}
                   className="px-4 py-2.5 rounded-md border border-orange-200 bg-slate-50 text-[#EE4D2D] text-sm font-bold hover:bg-slate-100 disabled:opacity-50 transition"
@@ -860,6 +951,28 @@ export default function Home() {
           </header>
 
           <div className="p-4 md:p-7">
+            {demoMode && (
+              <div className="mb-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-bold text-amber-800">Modo demonstração ativo</p>
+                    <p className="text-xs text-amber-700 mt-1">
+                      As vendas geradas neste modo são simuladas para demonstração do sistema.
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold text-amber-700">
+                    Próximas vendas: intervalo de 2–5 min
+                  </span>
+                </div>
+
+                {demoMessage && (
+                  <p className="text-sm font-semibold text-amber-900 mt-3">
+                    {demoMessage}
+                  </p>
+                )}
+              </div>
+            )}
+
             {connectionMessage && (
               <div className="mb-5 rounded-md border border-orange-100 bg-slate-50 px-4 py-3 text-sm text-orange-700">
                 {connectionMessage}
