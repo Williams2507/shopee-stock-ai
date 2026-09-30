@@ -1,156 +1,72 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
+import { supabaseAdmin } from "@/lib/supabase/server";
+
+const catalog = [
+  [-910001,-920001,"SIM-CAM-29-KIT","Kit 2 Câmara de Ar Pneu Bike Aro 29",28.90,13.20,86,18],
+  [-910002,-920002,"SIM-SINAL-LED","Par Sinalizador LED Duplo Farol Lanterna",25.80,9.40,42,10],
+  [-910003,-920003,"SIM-COG-GTA-V","Kit Single Cog GTA 16 Dentes Vermelho",49.90,24.50,34,8],
+  [-910004,-920004,"SIM-BOMBA-GTA","Bomba de Ar GTA Portátil Bicicleta MTB",41.90,19.80,29,7],
+  [-910005,-920005,"SIM-COG-GTA-P","Kit Single Cog GTA 16 Dentes Preto",49.90,24.50,37,8],
+  [-910006,-920006,"SIM-MANOPLA-PR","Par de Manopla Punho Bike Bicicleta Premium",9.90,3.80,118,25],
+  [-910007,-920007,"SIM-MANOPLA-165","Manoplas para Bike Bicicleta Patinete 165mm",12.99,4.60,96,22],
+  [-910008,-920008,"SIM-MANOPLA-ERG","Par de Manopla Ergonômica GTA MTB BMX",29.99,12.40,53,12],
+  [-910009,-920009,"SIM-SELIM-GEL","Banco Selim Gel 2 Molas GTA Largo",40.90,21.30,31,8],
+  [-910010,-920010,"SIM-CATRACA-7V","Catraca Roda Livre Bike Bicicleta 7 Velocidades",91.90,49.80,18,6],
+  [-910011,-920011,"SIM-SELIM-BMX","Banco de Bike Bicicleta Selim BMX GTA",28.89,15.10,27,7],
+  [-910012,-920012,"SIM-PEDAL-GTA","Par de Pedal Bike Bicicleta Plataforma GTA",24.90,11.70,44,10],
+  [-910013,-920013,"SIM-DESCANSO","Descanso Lateral Pezinho Alumínio Bike",23.90,10.80,21,7],
+  [-910014,-920014,"SIM-CANOTE-CAM","Canote de Selim GTA Camaleão Alumínio",93.10,51.00,13,6],
+  [-910015,-920015,"SIM-GUIDAO-GTA","Guidão de Bike Bicicleta MTB Alumínio GTA",64.90,34.50,24,7],
+  [-910016,-920016,"SIM-CAM-26-29","Kit Câmara de Ar Bicicleta Aro 26 e 29",49.90,23.90,62,14],
+] as const;
 
 export async function POST(request: Request) {
   try {
     const user = await requireUser(request);
-
     const { data: store, error: storeError } = await supabaseAdmin
-      .from("stores")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
+      .from("stores").select("id").eq("user_id", user.id).maybeSingle();
 
     if (storeError) throw storeError;
-    if (!store) {
-      return NextResponse.json({ success: false, error: "Loja não encontrada." }, { status: 404 });
-    }
+    if (!store) return NextResponse.json({ success:false, error:"Loja não encontrada." }, { status:404 });
 
-    const { data: products, error: productsError } = await supabaseAdmin
-      .from("products")
-      .select("id, shopee_item_id, name")
-      .eq("store_id", store.id);
+    for (const [itemId, modelId, sku, name, price, cost, stock, minStock] of catalog) {
+      const now = new Date().toISOString();
 
-    if (productsError) throw productsError;
-    if (!products?.length) {
-      return NextResponse.json({ success: false, error: "Nenhum produto disponível." }, { status: 400 });
-    }
+      const { data: product, error: productError } = await supabaseAdmin
+        .from("products")
+        .upsert({
+          store_id: store.id, shopee_item_id: itemId, sku, name,
+          price, cost, status: "ACTIVE", updated_at: now,
+        }, { onConflict: "store_id,shopee_item_id" })
+        .select("id").single();
 
-    const productIds = products.map((product) => product.id);
+      if (productError || !product) throw productError || new Error(`Erro criando ${name}.`);
 
-    const { data: variations, error: variationsError } = await supabaseAdmin
-      .from("product_variations")
-      .select("id, product_id, shopee_model_id, name, price, stock")
-      .in("product_id", productIds)
-      .gt("stock", 1)
-      .gt("price", 0);
+      const { error: variationError } = await supabaseAdmin
+        .from("product_variations")
+        .upsert({
+          product_id: product.id, shopee_model_id: modelId, sku,
+          name: "Padrão", price, cost, stock, min_stock: minStock,
+          updated_at: now,
+        }, { onConflict: "product_id,shopee_model_id" });
 
-    if (variationsError) throw variationsError;
-    if (!variations?.length) {
-      return NextResponse.json({ success: false, error: "Nenhuma variação disponível para venda." }, { status: 400 });
-    }
-
-    // Favorece SKUs saudáveis. Itens perto do fim continuam podendo aparecer,
-    // mas com probabilidade muito menor.
-    const weighted = variations.flatMap((variation) => {
-      const stock = Number(variation.stock || 0);
-      const weight = stock >= 30 ? 8 : stock >= 20 ? 6 : stock >= 12 ? 4 : stock >= 7 ? 2 : 1;
-      return Array.from({ length: weight }, () => variation);
-    });
-
-    const variation = weighted[Math.floor(Math.random() * weighted.length)];
-    const product = products.find((item) => item.id === variation.product_id);
-    if (!product) throw new Error("Produto não encontrado.");
-
-    const currentStock = Number(variation.stock || 0);
-    const quantity = currentStock >= 15 && Math.random() < 0.15 ? 2 : 1;
-    const unitPrice = Number(variation.price || 0);
-    const totalAmount = Number((unitPrice * quantity).toFixed(2));
-    const orderReference = `DEMO-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-    const now = new Date().toISOString();
-
-    const { data: order, error: orderError } = await supabaseAdmin
-      .from("orders")
-      .insert({
-        store_id: store.id,
-        shopee_order_id: orderReference,
-        status: "COMPLETED",
-        total_amount: totalAmount,
-        order_date: now,
-        updated_at: now,
-      })
-      .select("id")
-      .single();
-
-    if (orderError || !order) throw orderError || new Error("Erro ao criar pedido.");
-
-    const { error: itemError } = await supabaseAdmin.from("order_items").insert({
-      order_id: order.id,
-      product_id: product.id,
-      variation_id: variation.id,
-      quantity,
-      unit_price: unitPrice,
-      shopee_item_id: product.shopee_item_id ?? null,
-      shopee_model_id: variation.shopee_model_id ?? null,
-    });
-
-    if (itemError) {
-      await supabaseAdmin.from("orders").delete().eq("id", order.id);
-      throw itemError;
-    }
-
-    // Baixa o mesmo estoque usado pelo dashboard. A condição no estoque atual
-    // evita sobrescrever uma alteração concorrente.
-    const newStock = currentStock - quantity;
-    const { data: updatedVariation, error: stockError } = await supabaseAdmin
-      .from("product_variations")
-      .update({ stock: newStock })
-      .eq("id", variation.id)
-      .eq("stock", currentStock)
-      .select("id, stock")
-      .maybeSingle();
-
-    if (stockError || !updatedVariation) {
-      await supabaseAdmin.from("order_items").delete().eq("order_id", order.id);
-      await supabaseAdmin.from("orders").delete().eq("id", order.id);
-      throw stockError || new Error("Estoque mudou durante a venda. Tente novamente.");
-    }
-
-    // Registra a movimentação para manter o histórico operacional consistente.
-    const { error: movementError } = await supabaseAdmin
-      .from("inventory_movements")
-      .insert({
-        store_id: store.id,
-        product_id: product.id,
-        variation_id: variation.id,
-        type: "SALE",
-        quantity: -quantity,
-        reason: "Venda simulada",
-        reference_id: orderReference,
-      });
-
-    if (movementError) {
-      // A venda continua válida; não desfazemos pedido/estoque por falha apenas
-      // no log auxiliar, mas registramos para diagnóstico.
-      console.error("Erro registrando movimentação simulada:", movementError);
+      if (variationError) throw variationError;
     }
 
     return NextResponse.json({
       success: true,
-      simulation: true,
-      sale: {
-        orderId: orderReference,
-        product: product.name,
-        variation: variation.name || null,
-        quantity,
-        unitPrice,
-        total: totalAmount,
-        stockBefore: currentStock,
-        stockAfter: newStock,
-        createdAt: now,
-      },
+      products: catalog.length,
+      stock: catalog.reduce((sum, item) => sum + item[6], 0),
     });
   } catch (error) {
-    console.error("Erro criando venda simulada:", error);
-
+    console.error("Erro preparando cenário:", error);
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ success: false, error: "Não autorizado." }, { status: 401 });
+      return NextResponse.json({ success:false, error:"Não autorizado." }, { status:401 });
     }
-
-    return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Erro criando venda simulada." },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success:false,
+      error: error instanceof Error ? error.message : "Erro preparando cenário.",
+    }, { status:500 });
   }
 }
